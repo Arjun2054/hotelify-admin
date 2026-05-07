@@ -413,7 +413,7 @@ export function ModalFooter({
       <button
         onClick={onSubmit}
         disabled={isSaving}
-        className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition-colors disabled:opacity-50 shadow-sm"
+        className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-stone-700 hover:bg-stone-800 rounded-xl transition-colors disabled:opacity-50 shadow-sm"
       >
         {isSaving ? (
           <RefreshCw className="w-4 h-4 animate-spin" />

@@ -164,9 +164,6 @@ export default function HousekeepingOverview({
     setIsRefreshing(false);
   };
 
-  // ── Derived Data ───────────────────────────────────────
-  const today = new Date().toISOString().split("T")[0];
-
   // Today's tasks from board
   const todayTasks = board.flatMap((col) => col.tasks);
 
@@ -324,28 +321,28 @@ function ManagerDashboard({
           value={stats?.total ?? 0}
           sub="All time"
           icon={BedDouble}
-          color="blue"
+          color="white"
         />
         <KpiCard
           label="Today's Tasks"
           value={stats?.todayTasks ?? 0}
           sub="Scheduled today"
           icon={Calendar}
-          color="indigo"
+          color="white"
         />
         <KpiCard
           label="Completion Rate"
           value={`${completionRate}%`}
           sub={`${(stats?.completed ?? 0) + (stats?.inspected ?? 0)} done`}
           icon={TrendingUp}
-          color="green"
+          color="white"
         />
         <KpiCard
           label="Overdue"
           value={stats?.overdueTasks ?? 0}
           sub="Need attention"
           icon={AlertTriangle}
-          color={(stats?.overdueTasks ?? 0 > 0) ? "red" : "gray"}
+          color="white"
         />
       </div>
 
@@ -438,11 +435,11 @@ function ManagerDashboard({
         <AlertSection
           title="Overdue Tasks"
           icon={AlertTriangle}
-          iconColor="text-red-500"
+          iconColor="text-gray-500"
           count={overdueTasks.length}
           emptyMessage="No overdue tasks 🎉"
           emptyColor="text-green-600"
-          accentColor="border-red-200 bg-red-50"
+          accentColor="border-gray-200 bg-gray-50"
           tasks={overdueTasks.slice(0, 4)}
           onTaskClick={onNavigateToTask}
           onViewAll={onNavigateToList}
@@ -452,11 +449,11 @@ function ManagerDashboard({
         <AlertSection
           title="Ready for Inspection"
           icon={ClipboardCheck}
-          iconColor="text-purple-500"
+          iconColor="text-gray-500"
           count={needsInspection.length}
           emptyMessage="No rooms waiting for inspection"
           emptyColor="text-gray-400"
-          accentColor="border-purple-200 bg-purple-50"
+          accentColor="border-gray-200 bg-gray-50"
           tasks={needsInspection.slice(0, 4)}
           onTaskClick={onNavigateToTask}
           onViewAll={onNavigateToList}
@@ -503,7 +500,7 @@ function ManagerDashboard({
         <div className="bg-white rounded-2xl border border-gray-200 p-5">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-semibold text-gray-900 flex items-center gap-2">
-              <Package className="w-4 h-4 text-blue-600" />
+              <Package className="w-4 h-4 text-gray-600" />
               Top Items Used
             </h3>
           </div>
@@ -514,7 +511,7 @@ function ManagerDashboard({
                 key={item.itemId}
                 className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-50 transition-colors"
               >
-                <span className="w-6 h-6 rounded-full bg-blue-100 text-blue-700 text-xs font-bold flex items-center justify-center shrink-0">
+                <span className="w-6 h-6 rounded-full bg-gray-100 text-gray-700 text-xs font-bold flex items-center justify-center shrink-0">
                   {idx + 1}
                 </span>
                 <div className="flex-1 min-w-0">
@@ -546,7 +543,7 @@ function ManagerDashboard({
 
       {/* ── Avg Completion Time ── */}
       {stats?.avgCompletionMinutes && (
-        <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl p-5 text-white">
+        <div className="bg-linear-to-br from-stone-800 via-stone-700 to-stone-900 rounded-2xl p-5 text-white">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-blue-100 text-sm font-medium mb-1">
@@ -854,7 +851,7 @@ function KpiCard({
   const c = KPI_COLOR_MAP[color] ?? KPI_COLOR_MAP.gray;
   return (
     <div
-      className={`rounded-2xl border ${c.border} ${c.bg} p-4 flex flex-col gap-3`}
+      className={`rounded-2xl border border-gray-200 ${c.border} ${c.bg} p-4 flex flex-col gap-3`}
     >
       <div
         className={`w-10 h-10 rounded-xl flex items-center justify-center ${c.icon}`}
@@ -911,7 +908,7 @@ function AlertSection({
         {count > 0 && onViewAll && (
           <button
             onClick={onViewAll}
-            className="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1 transition-colors"
+            className="text-xs text-gray-600 hover:text-blue-800 flex items-center gap-1 transition-colors"
           >
             View all <ChevronRight className="w-3 h-3" />
           </button>
@@ -1220,14 +1217,17 @@ function StaffPerformanceSummary({
   if (totalCompleted === 0) return null;
 
   return (
-    <div className="bg-gradient-to-r from-green-500 to-emerald-600 rounded-2xl p-5 text-white">
+    <div className="bg-linear-to-br from-stone-800 via-stone-700 to-stone-900 rounded-2xl p-5 text-white">
+      <div className="absolute -top-12 -right-12 w-56 h-56 rounded-full bg-white/5 pointer-events-none" />
+      <div className="absolute -bottom-20 -left-8 w-64 h-64 rounded-full bg-white/5 pointer-events-none" />
+      <div className="absolute top-6 right-52 w-20 h-20 rounded-full bg-white/3 pointer-events-none" />
       <div className="flex items-center gap-2 mb-3">
         <Award className="w-5 h-5 text-green-100" />
         <h3 className="font-semibold text-white">Your Performance</h3>
       </div>
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <p className="text-3xl font-bold">{totalCompleted}</p>
+          <p className="text-3xl font-bold text-white">{totalCompleted}</p>
           <p className="text-green-100 text-sm">Total completed</p>
         </div>
         {avgDuration !== null && (

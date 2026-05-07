@@ -273,7 +273,7 @@ export default function RoomDetailPage() {
     try {
       await deleteRoom(id);
       toast.success("Room deleted");
-      navigate("/hotel/rooms");
+      navigate("/rooms");
     } finally {
       setIsDeleting(false);
     }
@@ -376,7 +376,7 @@ export default function RoomDetailPage() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => navigate("/hotel/rooms")}
+            onClick={() => navigate("/room")}
             className="-ml-2 gap-1.5 text-xs text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft className="h-3.5 w-3.5" />

@@ -70,12 +70,12 @@ export default function HrLayout({
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between mb-4">
             <div className="min-w-0">
               <div className="flex items-center gap-2 mb-1">
-                <Users className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-600 shrink-0" />
-                <span className="text-xs font-semibold uppercase tracking-wider text-emerald-600">
+                <Users className="w-4 h-4 sm:w-5 sm:h-5 text-stone-900 shrink-0" />
+                <span className="text-xs font-semibold uppercase tracking-wider text-stone-900">
                   Human Resources
                 </span>
               </div>
-              <h1 className="text-xl sm:text-2xl font-bold text-slate-900 truncate">
+              <h1 className="text-xl sm:text-2xl font-bold text-stone-900 truncate">
                 {title}
               </h1>
               {subtitle && (
@@ -113,7 +113,7 @@ export default function HrLayout({
                      focus-visible:outline-none focus-visible:ring-2 
                      focus-visible:ring-emerald-500 focus-visible:ring-offset-1`,
                     isActive
-                      ? "border-emerald-600 text-emerald-700"
+                      ? "border-stone-600 text-stone-700"
                       : `border-transparent text-slate-500 
                          hover:text-slate-700 hover:border-slate-300`,
                   )}

@@ -211,7 +211,7 @@ export default function FnbSettingsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f9f7f4]">
+    <div className="min-h-screen">
       {/* ── Hero header ───────────────────────────────────────────────────── */}
       <div className="relative overflow-hidden bg-linear-to-br from-stone-800 via-stone-700 to-stone-900 px-8 py-10">
         {/* Decorative circles */}

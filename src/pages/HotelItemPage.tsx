@@ -25,10 +25,20 @@ import type {
   HotelItem,
   StockMovementType,
 } from "@/types/hotelItem-types";
-import { Plus } from "lucide-react";
+import {
+  Plus,
+  Package,
+  ChevronLeft,
+  ChevronRight,
+  ArrowDownToLine,
+  ArrowUpFromLine,
+  Boxes,
+} from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
+// ── Page ──────────────────────────────────────────────────────────────────────
 const HotelItemPage = () => {
   const {
     items,
@@ -60,7 +70,6 @@ const HotelItemPage = () => {
   );
   const [stockMovementType, setStockMovementType] =
     useState<StockMovementType>("STOCK_IN");
-
   const [deleteTarget, setDeleteTarget] = useState<HotelItem | null>(null);
 
   useEffect(() => {
@@ -71,13 +80,11 @@ const HotelItemPage = () => {
     fetchSuppliers();
   }, []);
 
-  // Refetch items when filters change
   useEffect(() => {
     fetchItems();
   }, [filters]);
 
-  // ─── Handlers ─────────────────────────────────────────
-
+  // ── Handlers ──────────────────────────────────────────────────────────────
   const handleCreate = async (data: CreateHotelItemPayload) => {
     await createItem(data);
     toast.success("Item created successfully");
@@ -140,86 +147,269 @@ const HotelItemPage = () => {
     });
   };
 
+  const totalItems = meta?.total ?? items.length;
+  const currentPage = meta?.page ?? 1;
+  const totalPages = meta?.totalPages ?? 1;
+
+  // Derive quick stats from store stats for hero strip
+  const activeCount = stats?.activeItems ?? 0;
+  const lowStockCount = stats?.lowStockItems ?? 0;
+  const totalValue = stats?.totalStockValue ?? 0;
+
   return (
-    <div className="flex h-full flex-col space-y-6 bg-[#f9fafb]">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Hotel Items</h1>
-          <p className="text-muted-foreground mt-1">
-            Manage hotel inventory items, stock levels, and movements.
-          </p>
-        </div>
-        <div className="flex gap-2">
+    <div className="min-h-screen">
+      {/* ── Hero header ─────────────────────────────────────────────────────── */}
+      <div className="relative overflow-hidden bg-linear-to-br from-stone-800 via-stone-700 to-stone-900 px-8 py-10">
+        {/* Decorative blobs */}
+        <div className="absolute -top-12 -right-12 w-56 h-56 rounded-full bg-white/5 pointer-events-none" />
+        <div className="absolute -bottom-20 -left-8 w-64 h-64 rounded-full bg-white/5 pointer-events-none" />
+        <div className="absolute top-6 right-52 w-20 h-20 rounded-full bg-white/3 pointer-events-none" />
+
+        <div className="relative flex items-start justify-between gap-6 flex-wrap">
+          {/* Left: icon + title */}
+          <div className="flex items-center gap-4">
+            <div className="flex items-center justify-center w-12 h-12 rounded-2xl bg-white/10 border border-white/20 backdrop-blur-sm shrink-0">
+              <Package className="w-6 h-6 text-white" />
+            </div>
+
+            <div>
+              {/* Breadcrumb */}
+              <div className="flex items-center gap-2 mb-1">
+                <p
+                  className="uppercase tracking-widest font-semibold text-stone-400"
+                  style={{ fontSize: "10px" }}
+                >
+                  Hotel Management
+                </p>
+                <span className="w-1 h-1 rounded-full bg-stone-500" />
+                <p
+                  className="uppercase tracking-widest font-semibold text-stone-400"
+                  style={{ fontSize: "10px" }}
+                >
+                  Inventory
+                </p>
+                <span className="w-1 h-1 rounded-full bg-stone-500" />
+                <p
+                  className="uppercase tracking-widest font-semibold text-stone-400"
+                  style={{ fontSize: "10px" }}
+                >
+                  Items
+                </p>
+              </div>
+
+              <h1
+                className="font-bold text-white leading-tight tracking-tight"
+                style={{ fontSize: "22px" }}
+              >
+                Hotel Items
+              </h1>
+              <p
+                className="text-stone-300 mt-1 leading-snug"
+                style={{ fontSize: "13px" }}
+              >
+                Manage inventory items, stock levels, and movements
+              </p>
+            </div>
+          </div>
+
+          {/* Right: CTA */}
           <Button
             onClick={() => {
               setEditingItem(null);
               setFormOpen(true);
             }}
+            className="h-9 px-5 rounded-xl gap-2 bg-white text-stone-800 hover:bg-stone-50 font-semibold shadow-md shrink-0"
+            style={{ fontSize: "13px" }}
           >
-            <Plus className="mr-2 h-4 w-4" /> Add Item
+            <Plus className="w-3.5 h-3.5" />
+            Add Item
           </Button>
         </div>
-      </div>
-      <ItemStatsCards stats={stats} />
 
-      {/* Filters */}
-      <HotelItemFilters
-        filters={filters}
-        categories={categories}
-        suppliers={suppliers}
-        onFilterChange={setFilters}
-        onClear={handleClearFilters}
-      />
-
-      {/* Table */}
-      <HotelItemTable
-        items={items}
-        isLoading={isLoading}
-        onView={openDetail}
-        onEdit={(item) => {
-          setEditingItem(item);
-          setFormOpen(true);
-        }}
-        onDelete={setDeleteTarget}
-        onStockMovement={openStockMovement}
-        onToggleActive={handleToggleActive}
-      />
-
-      {/* Pagination info */}
-      {meta && (
-        <div className="flex items-center justify-between text-sm text-muted-foreground">
-          <span>
-            Showing {items.length} of {meta.total} items
-          </span>
-          {meta.totalPages > 1 && (
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={meta.page <= 1}
-                onClick={() => fetchItems(meta.page - 1)}
+        {/* ── Stat strip ────────────────────────────────────────────────── */}
+        <div className="relative mt-7 flex items-center gap-3 flex-wrap">
+          {[
+            {
+              label: "Total Items",
+              value: totalItems,
+              icon: Boxes,
+            },
+            {
+              label: "Active",
+              value: activeCount,
+              icon: Package,
+            },
+            {
+              label: "Low Stock",
+              value: lowStockCount,
+              icon: ArrowDownToLine,
+            },
+            {
+              label: "Stock Value",
+              value: `$${Number(totalValue).toLocaleString()}`,
+              icon: ArrowUpFromLine,
+            },
+          ].map((stat) => (
+            <div
+              key={stat.label}
+              className="flex items-center gap-2.5 px-3.5 py-2 rounded-xl bg-white/10 border border-white/15 backdrop-blur-sm"
+            >
+              <stat.icon className="w-3.5 h-3.5 text-stone-300 shrink-0" />
+              <span
+                className="font-bold text-white leading-none"
+                style={{ fontSize: "15px" }}
               >
-                Previous
-              </Button>
-              <span className="flex items-center px-2">
-                Page {meta.page} of {meta.totalPages}
+                {isLoading ? "—" : stat.value}
               </span>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={meta.page >= meta.totalPages}
-                onClick={() => fetchItems(meta.page + 1)}
+              <span
+                className="text-stone-300 leading-none"
+                style={{ fontSize: "11px" }}
               >
-                Next
-              </Button>
+                {stat.label}
+              </span>
             </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Body ────────────────────────────────────────────────────────────── */}
+      <div className="px-8 py-6 space-y-5">
+        {/* KPI Cards */}
+        <ItemStatsCards stats={stats} />
+
+        {/* Filters */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
+          <HotelItemFilters
+            filters={filters}
+            categories={categories}
+            suppliers={suppliers}
+            onFilterChange={setFilters}
+            onClear={handleClearFilters}
+          />
+        </div>
+
+        {/* Section label */}
+        <div className="flex items-center gap-2">
+          <p
+            className="uppercase tracking-widest font-semibold text-gray-400"
+            style={{ fontSize: "10px" }}
+          >
+            All Items
+          </p>
+          <div className="flex-1 h-px bg-gray-200" />
+          {meta && (
+            <span
+              className="px-2 py-0.5 rounded-full bg-white border border-gray-200 text-gray-400 font-medium shadow-sm"
+              style={{ fontSize: "10px" }}
+            >
+              {items.length} of {meta.total} shown
+            </span>
           )}
         </div>
-      )}
 
-      {/* ── Dialogs ────────────────────────────────────── */}
+        {/* Table */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <HotelItemTable
+            items={items}
+            isLoading={isLoading}
+            onView={openDetail}
+            onEdit={(item) => {
+              setEditingItem(item);
+              setFormOpen(true);
+            }}
+            onDelete={setDeleteTarget}
+            onStockMovement={openStockMovement}
+            onToggleActive={handleToggleActive}
+          />
+        </div>
 
-      {/* Create / Edit Dialog */}
+        {/* Pagination */}
+        {meta && totalPages > 1 && (
+          <div className="flex items-center justify-between flex-wrap gap-3 pt-1">
+            <p className="text-gray-400" style={{ fontSize: "12px" }}>
+              Page{" "}
+              <span className="font-semibold text-gray-600">{currentPage}</span>{" "}
+              of{" "}
+              <span className="font-semibold text-gray-600">{totalPages}</span>{" "}
+              ·{" "}
+              <span className="font-semibold text-gray-600">{meta.total}</span>{" "}
+              total items
+            </p>
+
+            <div className="flex items-center gap-1.5">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={currentPage <= 1 || isLoading}
+                onClick={() => fetchItems(currentPage - 1)}
+                className="h-8 px-3 rounded-xl border-gray-200 bg-white shadow-sm text-gray-600 hover:bg-stone-50 gap-1"
+                style={{ fontSize: "12px" }}
+              >
+                <ChevronLeft className="w-3.5 h-3.5" />
+                Previous
+              </Button>
+
+              {/* Page number pills */}
+              <div className="flex items-center gap-1">
+                {Array.from({ length: totalPages }, (_, i) => i + 1)
+                  .filter(
+                    (p) =>
+                      p === 1 ||
+                      p === totalPages ||
+                      Math.abs(p - currentPage) <= 1,
+                  )
+                  .reduce<(number | "…")[]>((acc, p, idx, arr) => {
+                    if (idx > 0 && p - (arr[idx - 1] as number) > 1)
+                      acc.push("…");
+                    acc.push(p);
+                    return acc;
+                  }, [])
+                  .map((p, idx) =>
+                    p === "…" ? (
+                      <span
+                        key={`ellipsis-${idx}`}
+                        className="w-8 text-center text-gray-400"
+                        style={{ fontSize: "12px" }}
+                      >
+                        …
+                      </span>
+                    ) : (
+                      <button
+                        key={p}
+                        onClick={() => fetchItems(p as number)}
+                        className={cn(
+                          "w-8 h-8 rounded-lg font-medium transition-all",
+                          currentPage === p
+                            ? "bg-stone-800 text-white shadow-sm"
+                            : "text-gray-500 hover:bg-stone-100",
+                        )}
+                        style={{ fontSize: "12px" }}
+                      >
+                        {p}
+                      </button>
+                    ),
+                  )}
+              </div>
+
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={currentPage >= totalPages || isLoading}
+                onClick={() => fetchItems(currentPage + 1)}
+                className="h-8 px-3 rounded-xl border-gray-200 bg-white shadow-sm text-gray-600 hover:bg-stone-50 gap-1"
+                style={{ fontSize: "12px" }}
+              >
+                Next
+                <ChevronRight className="w-3.5 h-3.5" />
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* ── Dialogs ─────────────────────────────────────────────────────────── */}
+
+      {/* Create / Edit */}
       <HotelItemFormDialog
         open={formOpen}
         onClose={() => {
@@ -234,7 +424,7 @@ const HotelItemPage = () => {
         isLoading={isLoading}
       />
 
-      {/* Detail Sheet */}
+      {/* Detail sheet */}
       <HotelItemDetailSheet
         item={detailItem}
         open={detailOpen}
@@ -245,7 +435,7 @@ const HotelItemPage = () => {
         }}
       />
 
-      {/* Stock Movement Dialog */}
+      {/* Stock movement */}
       <StockMovementDialog
         open={!!stockMovementItem}
         item={stockMovementItem}
@@ -254,26 +444,46 @@ const HotelItemPage = () => {
         onClose={() => setStockMovementItem(null)}
         onSubmit={handleStockMovement}
       />
-      {/* Delete Confirmation */}
+
+      {/* Delete confirmation */}
       <AlertDialog
         open={!!deleteTarget}
         onOpenChange={() => setDeleteTarget(null)}
       >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete "{deleteTarget?.name}"?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will permanently remove the item and its history. This action
-              cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+        <AlertDialogContent className="rounded-2xl border-gray-100 shadow-xl p-0 overflow-hidden gap-0">
+          {/* Red gradient header */}
+          <div className="bg-linear-to-br from-red-600 to-red-700 px-6 py-5">
+            <AlertDialogHeader>
+              <AlertDialogTitle
+                className="text-white font-semibold"
+                style={{ fontSize: "15px" }}
+              >
+                Delete "{deleteTarget?.name}"?
+              </AlertDialogTitle>
+              <AlertDialogDescription
+                className="text-red-200"
+                style={{ fontSize: "12px" }}
+              >
+                This will permanently remove the item and its history. This
+                action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+          </div>
+
+          {/* Footer */}
+          <AlertDialogFooter className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex gap-2">
+            <AlertDialogCancel
+              className="flex-1 h-9 rounded-xl border-gray-200 text-gray-600"
+              style={{ fontSize: "13px" }}
+            >
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
-              className="bg-red-600 hover:bg-red-700"
+              className="flex-1 h-9 rounded-xl bg-red-600 hover:bg-red-700 text-white"
+              style={{ fontSize: "13px" }}
             >
-              Delete
+              Delete Item
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

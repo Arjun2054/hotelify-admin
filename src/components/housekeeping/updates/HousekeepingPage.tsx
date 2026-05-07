@@ -15,6 +15,12 @@ import {
   Shield,
   Building2,
   BedDouble,
+  Sparkles,
+  Clock,
+  CheckCircle2,
+  AlertTriangle,
+  CalendarDays,
+  Hotel,
 } from "lucide-react";
 import { useAuthStore } from "@/store/useAuthStore";
 import { BoardView } from "./BoardView";
@@ -30,11 +36,336 @@ import type {
 import { useHousekeepingStore } from "@/store/houseKeeping/useHousekeepingStore";
 import HousekeepingOverview from "./HousekeepingOverview";
 import RoomHousekeepingManager from "@/components/room-housekeeping/RoomHousekeepingManager";
+import { cn } from "@/lib/utils";
 
 type ViewMode = "overview" | "board" | "list" | "stats" | "rooms";
 
+// ── Guard screens ─────────────────────────────────────────────────────────────
+function NoOrgScreen() {
+  return (
+    <div className="min-h-screen bg-[#f9f7f4] flex items-center justify-center p-6">
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-md p-10 max-w-md w-full text-center">
+        <div className="flex items-center justify-center w-14 h-14 rounded-2xl bg-amber-50 border border-amber-200 mx-auto mb-5">
+          <Building2 className="w-7 h-7 text-amber-600" />
+        </div>
+        <h2
+          className="font-bold text-gray-800 mb-2"
+          style={{ fontSize: "16px" }}
+        >
+          No Organization Selected
+        </h2>
+        <p className="text-gray-400" style={{ fontSize: "12px" }}>
+          Please select an organization to continue.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function NoAccessScreen({
+  isStaff,
+  department,
+}: {
+  isStaff: boolean;
+  department?: string | null;
+}) {
+  return (
+    <div className="min-h-screen  flex items-center justify-center p-6">
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-md p-10 max-w-md w-full text-center">
+        <div className="flex items-center justify-center w-14 h-14 rounded-2xl bg-red-50 border border-red-200 mx-auto mb-5">
+          <Shield className="w-7 h-7 text-red-500" />
+        </div>
+        <h2
+          className="font-bold text-gray-800 mb-2"
+          style={{ fontSize: "16px" }}
+        >
+          Access Restricted
+        </h2>
+        <p
+          className="text-gray-400 leading-relaxed"
+          style={{ fontSize: "12px" }}
+        >
+          You don't have access to Housekeeping.
+          {isStaff && department && (
+            <>
+              {" "}
+              Your department is{" "}
+              <span className="font-semibold text-gray-600">{department}</span>.
+              Only Housekeeping staff can access this section.
+            </>
+          )}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// ── Role badge ────────────────────────────────────────────────────────────────
+function RoleBadge({
+  role,
+  department,
+}: {
+  role: string;
+  department: string | null;
+}) {
+  const config: Record<string, { label: string; className: string }> = {
+    OWNER: {
+      label: "Owner",
+      className: "bg-purple-50 border border-purple-200 text-purple-700",
+    },
+    ADMIN: {
+      label: "Admin",
+      className: "bg-blue-50 border border-blue-200 text-blue-700",
+    },
+    STAFF: {
+      label: department ? `Staff · ${department}` : "Staff",
+      className: "bg-stone-100 border border-stone-200 text-stone-600",
+    },
+  };
+
+  const badge = config[role] ?? {
+    label: role,
+    className: "bg-stone-100 border border-stone-200 text-stone-600",
+  };
+
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center px-2.5 py-0.5 rounded-full font-medium",
+        badge.className,
+      )}
+      style={{ fontSize: "10px" }}
+    >
+      {badge.label}
+    </span>
+  );
+}
+
+// ── Stat strip ────────────────────────────────────────────────────────────────
+function StatsStrip({ stats }: { stats: HousekeepingStats }) {
+  const items: {
+    label: string;
+    value: number;
+    icon: React.ElementType;
+    accent: string;
+    valueColor: string;
+  }[] = [
+    {
+      label: "Total",
+      value: stats.total,
+      icon: LayoutGrid,
+      accent: "bg-stone-100 border-stone-200 text-stone-500",
+      valueColor: "text-gray-800",
+    },
+    {
+      label: "Pending",
+      value: stats.pending,
+      icon: Clock,
+      accent: "bg-stone-100 border-stone-200 text-stone-500",
+      valueColor: "text-gray-800",
+    },
+    {
+      label: "In Progress",
+      value: stats.inProgress,
+      icon: RefreshCw,
+      accent: "bg-stone-100 border-stone-200 text-stone-500",
+      valueColor: "text-gray-800",
+    },
+    {
+      label: "Completed",
+      value: stats.completed,
+      icon: CheckCircle2,
+      accent: "bg-stone-100 border-stone-200 text-stone-500",
+      valueColor: "text-gray-800",
+    },
+    {
+      label: "Inspected",
+      value: stats.inspected,
+      icon: Sparkles,
+      accent: "bg-stone-100 border-stone-200 text-stone-500",
+      valueColor: "text-gray-800",
+    },
+    {
+      label: "Today",
+      value: stats.todayTasks,
+      icon: CalendarDays,
+      accent: "bg-stone-100 border-stone-200 text-stone-500",
+      valueColor: "text-gray-800",
+    },
+    {
+      label: "Overdue",
+      value: stats.overdueTasks,
+      icon: AlertTriangle,
+      accent:
+        stats.overdueTasks > 0
+          ? "bg-red-50 border-red-200 text-red-600"
+          : "bg-stone-50 border-stone-200 text-stone-400",
+      valueColor:
+        stats.overdueTasks > 0 ? "text-red-700 font-bold" : "text-gray-400",
+    },
+  ];
+
+  return (
+    <div className="grid grid-cols-4 md:grid-cols-7 gap-2">
+      {items.map((item) => (
+        <div
+          key={item.label}
+          className="bg-white rounded-xl border border-gray-100 shadow-sm px-3 py-2.5 text-center"
+        >
+          <div className="flex items-center justify-center mb-1">
+            <span
+              className={cn(
+                "inline-flex items-center justify-center w-6 h-6 rounded-lg border",
+                item.accent,
+              )}
+            >
+              <item.icon className="w-3 h-3" />
+            </span>
+          </div>
+          <div
+            className={cn("font-bold leading-none", item.valueColor)}
+            style={{ fontSize: "16px" }}
+          >
+            {item.value}
+          </div>
+          <div className="text-gray-400 mt-0.5" style={{ fontSize: "10px" }}>
+            {item.label}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ── Filter panel ──────────────────────────────────────────────────────────────
+function FilterPanel({
+  filters,
+  onChange,
+  onApply,
+  onClear,
+}: {
+  filters: HousekeepingFilters;
+  onChange: React.Dispatch<React.SetStateAction<HousekeepingFilters>>;
+  onApply: () => void;
+  onClear: () => void;
+}) {
+  const inputCls =
+    "w-full px-3 py-2 h-9 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-stone-400/30";
+  const labelCls = "block font-medium text-gray-500 mb-1.5";
+
+  return (
+    <div className="bg-white border-b border-gray-100 px-8 py-4 shadow-sm">
+      <div className="max-w-screen-2xl mx-auto">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+          {/* Status */}
+          <div>
+            <label className={labelCls} style={{ fontSize: "11px" }}>
+              Status
+            </label>
+            <select
+              value={filters.status ?? ""}
+              onChange={(e) =>
+                onChange((f) => ({
+                  ...f,
+                  status:
+                    (e.target.value as HousekeepingFilters["status"]) ||
+                    undefined,
+                }))
+              }
+              className={inputCls}
+              style={{ fontSize: "13px" }}
+            >
+              <option value="">All Statuses</option>
+              <option value="PENDING">Pending</option>
+              <option value="IN_PROGRESS">In Progress</option>
+              <option value="COMPLETED">Completed</option>
+              <option value="INSPECTED">Inspected</option>
+            </select>
+          </div>
+
+          {/* Floor */}
+          <div>
+            <label className={labelCls} style={{ fontSize: "11px" }}>
+              Floor
+            </label>
+            <input
+              type="number"
+              placeholder="All floors"
+              value={filters.floor ?? ""}
+              onChange={(e) =>
+                onChange((f) => ({
+                  ...f,
+                  floor: e.target.value ? parseInt(e.target.value) : undefined,
+                }))
+              }
+              className={inputCls}
+              style={{ fontSize: "13px" }}
+            />
+          </div>
+
+          {/* Date From */}
+          <div>
+            <label className={labelCls} style={{ fontSize: "11px" }}>
+              From Date
+            </label>
+            <input
+              type="date"
+              value={filters.dateFrom ?? ""}
+              onChange={(e) =>
+                onChange((f) => ({
+                  ...f,
+                  dateFrom: e.target.value || undefined,
+                }))
+              }
+              className={inputCls}
+              style={{ fontSize: "13px" }}
+            />
+          </div>
+
+          {/* Date To */}
+          <div>
+            <label className={labelCls} style={{ fontSize: "11px" }}>
+              To Date
+            </label>
+            <input
+              type="date"
+              value={filters.dateTo ?? ""}
+              onChange={(e) =>
+                onChange((f) => ({
+                  ...f,
+                  dateTo: e.target.value || undefined,
+                }))
+              }
+              className={inputCls}
+              style={{ fontSize: "13px" }}
+            />
+          </div>
+
+          {/* Actions */}
+          <div className="flex items-end gap-2">
+            <button
+              onClick={onApply}
+              className="flex-1 h-9 px-3 bg-stone-800 hover:bg-stone-700 text-white rounded-xl font-medium transition-colors"
+              style={{ fontSize: "13px" }}
+            >
+              Apply
+            </button>
+            <button
+              onClick={onClear}
+              className="h-9 px-3 border border-gray-200 rounded-xl text-gray-500 hover:bg-gray-50 transition-colors"
+              style={{ fontSize: "13px" }}
+            >
+              Clear
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Page ──────────────────────────────────────────────────────────────────────
 export default function HousekeepingPage() {
-  // ── Auth Store ────────────────────────────────────────────
   const {
     user,
     getActiveOrganization,
@@ -44,21 +375,13 @@ export default function HousekeepingPage() {
     isInDepartment,
   } = useAuthStore();
 
-  // ── Derived Identity ──────────────────────────────────────
-  // role and department live in activeOrg, NOT in user object
   const activeOrg = getActiveOrganization();
-  const role = getActiveRole(); // → activeOrg.role
-  const department = getActiveDepartment(); // → activeOrg.department
-
-  // Convenience flags
+  const role = getActiveRole();
+  const department = getActiveDepartment();
   const isManager = canPerformAction(["OWNER", "ADMIN"]);
   const isStaff = role === "STAFF";
-
-  // OWNER/ADMIN → always access
-  // STAFF → only if department is HOUSEKEEPING
   const hasAccess = isManager || isInDepartment("HOUSEKEEPING");
 
-  // ── Housekeeping Store ────────────────────────────────────
   const {
     tasks,
     board,
@@ -77,7 +400,6 @@ export default function HousekeepingPage() {
     clearError,
   } = useHousekeepingStore();
 
-  // ── Local UI State ────────────────────────────────────────
   const [pageSize, setPageSize] = useState(25);
   const [viewMode, setViewMode] = useState<ViewMode>("board");
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -86,7 +408,6 @@ export default function HousekeepingPage() {
   const [localFilters, setLocalFilters] =
     useState<HousekeepingFilters>(filters);
 
-  // ── Effects ───────────────────────────────────────────────
   useEffect(() => {
     if (!hasAccess || !activeOrg) return;
     fetchStats();
@@ -102,7 +423,6 @@ export default function HousekeepingPage() {
     if (viewMode === "list") fetchTasks(1);
   }, [filters]);
 
-  // ── Handlers ──────────────────────────────────────────────
   const handleRefresh = () => {
     fetchStats();
     viewMode === "board" ? fetchBoard(boardDate) : fetchTasks(meta?.page ?? 1);
@@ -135,68 +455,40 @@ export default function HousekeepingPage() {
 
   const handlePageSizeChange = (size: number) => {
     setPageSize(size);
-    fetchTasks(1, size); // reset to page 1 when changing size
+    fetchTasks(1, size);
   };
 
   const activeFilterCount = Object.values(localFilters).filter(
     (v) => v !== undefined && v !== "" && v !== null,
   ).length;
 
-  // ── Guard: No Organization ────────────────────────────────
-  if (!activeOrg) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
-        <div className="bg-white rounded-2xl border border-gray-200 p-10 max-w-md w-full text-center">
-          <div className="w-16 h-16 bg-yellow-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <Building2 className="w-8 h-8 text-yellow-600" />
-          </div>
-          <h2 className="text-xl font-bold text-gray-900 mb-2">
-            No Organization Selected
-          </h2>
-          <p className="text-gray-500 text-sm">
-            Please select an organization to continue.
-          </p>
-        </div>
-      </div>
-    );
-  }
+  // ── Guards ────────────────────────────────────────────────
+  if (!activeOrg) return <NoOrgScreen />;
+  if (!hasAccess)
+    return <NoAccessScreen isStaff={isStaff} department={department} />;
 
-  // ── Guard: No Department Access ───────────────────────────
-  if (!hasAccess) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
-        <div className="bg-white rounded-2xl border border-gray-200 p-10 max-w-md w-full text-center">
-          <div className="w-16 h-16 bg-red-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <Shield className="w-8 h-8 text-red-500" />
-          </div>
-          <h2 className="text-xl font-bold text-gray-900 mb-2">
-            Access Restricted
-          </h2>
-          <p className="text-gray-500 text-sm leading-relaxed">
-            You don't have access to Housekeeping.
-            {isStaff && department && (
-              <>
-                {" "}
-                Your department is{" "}
-                <span className="font-semibold text-gray-700">
-                  {department}
-                </span>
-                . Only Housekeeping staff can access this section.
-              </>
-            )}
-          </p>
-        </div>
-      </div>
-    );
-  }
+  // ── Tabs config ───────────────────────────────────────────
+  const tabs = [
+    { id: "overview" as ViewMode, label: "Overview", icon: LayoutGrid },
+    { id: "board" as ViewMode, label: "Board", icon: LayoutGrid },
+    { id: "list" as ViewMode, label: "List", icon: List },
+    ...(isManager
+      ? [{ id: "rooms" as ViewMode, label: "Room Manager", icon: BedDouble }]
+      : []),
+    ...(isManager
+      ? [{ id: "stats" as ViewMode, label: "Analytics", icon: BarChart3 }]
+      : []),
+  ] as { id: ViewMode; label: string; icon: React.ElementType }[];
 
-  // ── Main Render ───────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* ── Error Banner ── */}
+    <div className="min-h-screen">
+      {/* ── Error banner ────────────────────────────────────────────────────── */}
       {error && (
-        <div className="bg-red-50 border-b border-red-200 px-4 py-3 flex items-center justify-between">
-          <p className="text-sm text-red-700">{error}</p>
+        <div className="flex items-center gap-3 px-8 py-3 bg-red-50 border-b border-red-200">
+          <AlertTriangle className="w-4 h-4 text-red-500 shrink-0" />
+          <p className="flex-1 text-red-700" style={{ fontSize: "12px" }}>
+            {error}
+          </p>
           <button
             onClick={clearError}
             className="text-red-400 hover:text-red-600 transition-colors"
@@ -206,136 +498,149 @@ export default function HousekeepingPage() {
         </div>
       )}
 
-      {/* ── Page Header ── */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4 sticky top-0 z-10">
-        <div className="max-w-screen-2xl mx-auto space-y-4">
-          {/* Title Row */}
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <div className="flex items-center gap-2 mb-0.5">
-                <h1 className="text-2xl font-bold text-gray-900">
-                  Housekeeping
-                </h1>
-                {/* 
-                  RoleBadge uses activeOrg.role + activeOrg.department
-                  NOT user.role (user has no role property)
-                */}
-                <RoleBadge
-                  role={activeOrg.role}
-                  department={activeOrg.department ?? null}
-                />
+      {/* ── Hero header ─────────────────────────────────────────────────────── */}
+      <div className="relative overflow-hidden bg-linear-to-br from-stone-800 via-stone-700 to-stone-900 px-8 pt-8 pb-0">
+        {/* Decorative blobs */}
+        <div className="absolute -top-12 -right-12 w-56 h-56 rounded-full bg-white/5 pointer-events-none" />
+        <div className="absolute -bottom-20 -left-8 w-64 h-64 rounded-full bg-white/5 pointer-events-none" />
+        <div className="absolute top-6 right-52 w-20 h-20 rounded-full bg-white/3 pointer-events-none" />
+
+        <div className="relative max-w-screen-2xl mx-auto space-y-5">
+          {/* Title row */}
+          <div className="flex items-start justify-between gap-6 flex-wrap">
+            {/* Left */}
+            <div className="flex items-center gap-4">
+              <div className="flex items-center justify-center w-12 h-12 rounded-2xl bg-white/10 border border-white/20 backdrop-blur-sm shrink-0">
+                <Hotel className="w-6 h-6 text-white" />
               </div>
 
-              {/* org name from activeOrg */}
-              <p className="text-sm text-gray-500">
-                {activeOrg.name} ·{" "}
-                {isManager
-                  ? "Manage and monitor all cleaning tasks"
-                  : "Your assigned cleaning tasks"}
-              </p>
+              <div>
+                {/* Breadcrumb */}
+                <div className="flex items-center gap-2 mb-1">
+                  <p
+                    className="uppercase tracking-widest font-semibold text-stone-400"
+                    style={{ fontSize: "10px" }}
+                  >
+                    Hotel Management
+                  </p>
+                  <span className="w-1 h-1 rounded-full bg-stone-500" />
+                  <p
+                    className="uppercase tracking-widest font-semibold text-stone-400"
+                    style={{ fontSize: "10px" }}
+                  >
+                    Housekeeping
+                  </p>
+                </div>
 
-              {/* user greeting from user object */}
-              {user && (
-                <p className="text-xs text-gray-400 mt-0.5">
-                  Logged in as{" "}
-                  <span className="font-medium text-gray-600">{user.name}</span>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h1
+                    className="font-bold text-white leading-tight tracking-tight"
+                    style={{ fontSize: "22px" }}
+                  >
+                    Housekeeping
+                  </h1>
+                  <RoleBadge
+                    role={activeOrg.role}
+                    department={activeOrg.department ?? null}
+                  />
+                </div>
+
+                <p className="text-stone-300 mt-1" style={{ fontSize: "13px" }}>
+                  {activeOrg.name} ·{" "}
+                  {isManager
+                    ? "Manage and monitor all cleaning tasks"
+                    : "Your assigned cleaning tasks"}
                 </p>
-              )}
+
+                {user && (
+                  <p
+                    className="text-stone-400 mt-0.5"
+                    style={{ fontSize: "11px" }}
+                  >
+                    Logged in as{" "}
+                    <span className="font-medium text-stone-300">
+                      {user.name}
+                    </span>
+                  </p>
+                )}
+              </div>
             </div>
 
+            {/* Right actions */}
             <div className="flex items-center gap-2 shrink-0">
+              {/* Refresh */}
               <button
                 onClick={handleRefresh}
                 disabled={isLoading}
-                title="Refresh"
-                className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
+                className={cn(
+                  "h-9 w-9 flex items-center justify-center rounded-xl",
+                  "bg-white/10 hover:bg-white/20 text-white border border-white/15",
+                  "transition-colors disabled:opacity-50",
+                )}
               >
                 <RefreshCw
-                  className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`}
+                  className={cn("w-4 h-4", isLoading && "animate-spin")}
                 />
               </button>
 
-              {/* Filters button — list view only */}
-
+              {/* Filters — list only */}
               {viewMode === "list" && (
                 <button
                   onClick={() => setShowFilters(!showFilters)}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium border transition-colors ${
+                  className={cn(
+                    "h-9 px-4 rounded-xl flex items-center gap-2 border font-medium transition-colors",
                     activeFilterCount > 0
-                      ? "bg-blue-50 border-blue-200 text-blue-700"
-                      : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50"
-                  }`}
+                      ? "bg-amber-400/20 border-amber-400/30 text-amber-200"
+                      : "bg-white/10 hover:bg-white/20 text-white border-white/15",
+                  )}
+                  style={{ fontSize: "13px" }}
                 >
-                  <Filter className="w-4 h-4" />
+                  <Filter className="w-3.5 h-3.5" />
                   Filters
                   {activeFilterCount > 0 && (
-                    <span className="bg-blue-600 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center leading-none">
+                    <span
+                      className="flex items-center justify-center w-4 h-4 rounded-full bg-amber-400 text-stone-900 font-bold leading-none"
+                      style={{ fontSize: "9px" }}
+                    >
                       {activeFilterCount}
                     </span>
                   )}
                 </button>
               )}
 
-              {/* Only OWNER/ADMIN see Assign Task button */}
+              {/* Assign Task — managers only */}
               {isManager && (
                 <button
                   onClick={() => setShowCreateModal(true)}
-                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 active:bg-blue-800 transition-colors"
+                  className="h-9 px-5 rounded-xl flex items-center gap-2 bg-white text-stone-800 hover:bg-stone-50 font-semibold shadow-md transition-colors"
+                  style={{ fontSize: "13px" }}
                 >
-                  <Plus className="w-4 h-4" />
+                  <Plus className="w-3.5 h-3.5" />
                   Assign Task
                 </button>
               )}
             </div>
           </div>
 
-          {/* Stats Strip — typed with HousekeepingStats */}
+          {/* Stats strip */}
           {stats && <StatsStrip stats={stats} />}
 
-          {/* Tab Bar */}
-          <div className="flex items-center gap-1 border-b border-gray-100 -mb-4">
-            {(
-              [
-                {
-                  id: "overview" as ViewMode,
-                  label: "Overview",
-                  icon: LayoutGrid,
-                },
-                { id: "board" as ViewMode, label: "Board", icon: LayoutGrid },
-                { id: "list" as ViewMode, label: "List", icon: List },
-
-                ...(isManager
-                  ? [
-                      {
-                        id: "rooms" as ViewMode,
-                        label: "Room Manager",
-                        icon: BedDouble,
-                      },
-                    ]
-                  : []),
-
-                // Analytics tab only visible to managers
-                ...(isManager
-                  ? [
-                      {
-                        id: "stats" as ViewMode,
-                        label: "Analytics",
-                        icon: BarChart3,
-                      },
-                    ]
-                  : []),
-              ] as { id: ViewMode; label: string; icon: React.ElementType }[]
-            ).map(({ id, label, icon: Icon }) => (
+          {/* Tab bar — sits flush at the bottom of the hero */}
+          <div className="flex items-center gap-0.5 -mx-8 px-8">
+            {tabs.map(({ id, label, icon: Icon }) => (
               <button
                 key={id}
                 onClick={() => setViewMode(id)}
-                className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors -mb-px ${
+                className={cn(
+                  "flex items-center gap-2 px-4 py-3 font-medium border-b-2 transition-all",
+                  "whitespace-nowrap",
                   viewMode === id
-                    ? "border-blue-600 text-blue-600"
-                    : "border-transparent text-gray-500 hover:text-gray-700"
-                }`}
+                    ? "border-white text-white"
+                    : "border-transparent text-stone-400 hover:text-stone-200 hover:border-stone-500",
+                )}
+                style={{ fontSize: "13px" }}
               >
-                <Icon className="w-4 h-4" />
+                <Icon className="w-3.5 h-3.5" />
                 {label}
               </button>
             ))}
@@ -343,7 +648,7 @@ export default function HousekeepingPage() {
         </div>
       </div>
 
-      {/* ── Filter Panel ── */}
+      {/* ── Filter panel ────────────────────────────────────────────────────── */}
       {showFilters && viewMode === "list" && (
         <FilterPanel
           filters={localFilters}
@@ -353,16 +658,16 @@ export default function HousekeepingPage() {
         />
       )}
 
-      {/* ── Main Content ── */}
-      <div className="max-w-screen-2xl mx-auto px-6 py-6">
-        {/* Board Date Navigator */}
+      {/* ── Main content ────────────────────────────────────────────────────── */}
+      <div className="max-w-screen-2xl mx-auto px-8 py-6">
+        {/* Board date navigator */}
         {viewMode === "board" && (
-          <div className="flex items-center gap-2 mb-5">
+          <div className="flex items-center gap-2 mb-5 flex-wrap">
             <button
               onClick={() => handleDateNav("prev")}
-              className="p-1.5 hover:bg-gray-200 rounded-lg transition-colors"
+              className="h-9 w-9 flex items-center justify-center rounded-xl bg-white border border-gray-200 shadow-sm text-gray-500 hover:bg-stone-50 transition-colors"
             >
-              <ChevronLeft className="w-5 h-5 text-gray-600" />
+              <ChevronLeft className="w-4 h-4" />
             </button>
 
             <input
@@ -372,14 +677,14 @@ export default function HousekeepingPage() {
                 setBoardDate(e.target.value);
                 fetchBoard(e.target.value);
               }}
-              className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="h-9 px-3 border border-gray-200 rounded-xl text-sm bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-stone-400/30"
             />
 
             <button
               onClick={() => handleDateNav("next")}
-              className="p-1.5 hover:bg-gray-200 rounded-lg transition-colors"
+              className="h-9 w-9 flex items-center justify-center rounded-xl bg-white border border-gray-200 shadow-sm text-gray-500 hover:bg-stone-50 transition-colors"
             >
-              <ChevronRight className="w-5 h-5 text-gray-600" />
+              <ChevronRight className="w-4 h-4" />
             </button>
 
             <button
@@ -388,25 +693,28 @@ export default function HousekeepingPage() {
                 setBoardDate(today);
                 fetchBoard(today);
               }}
-              className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50 bg-white transition-colors"
+              className="h-9 px-4 border border-gray-200 rounded-xl bg-white shadow-sm text-gray-600 hover:bg-stone-50 transition-colors font-medium"
+              style={{ fontSize: "13px" }}
             >
               Today
             </button>
 
-            {/* Staff sees reminder that they only see their own tasks */}
             {isStaff && (
-              <span className="text-xs text-gray-400 ml-2 italic">
+              <span
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-50 border border-amber-200 text-amber-700 font-medium"
+                style={{ fontSize: "11px" }}
+              >
+                <Shield className="w-3 h-3" />
                 Showing your tasks only
               </span>
             )}
           </div>
         )}
 
+        {/* View content */}
         {viewMode === "overview" && (
           <HousekeepingOverview
-            onNavigateToTask={(id) => {
-              setSelectedTaskId(id);
-            }}
+            onNavigateToTask={(id) => setSelectedTaskId(id)}
             onNavigateToBoard={() => setViewMode("board")}
             onNavigateToList={() => setViewMode("list")}
           />
@@ -429,16 +737,16 @@ export default function HousekeepingPage() {
             isManager={isManager}
             onTaskClick={handleTaskClick}
             onPageChange={(p) => fetchTasks(p, pageSize)}
-            onPageSizeChange={handlePageSizeChange} // ← new
+            onPageSizeChange={handlePageSizeChange}
           />
         )}
+
         {viewMode === "rooms" && isManager && <RoomHousekeepingManager />}
 
-        {/* Analytics only for managers */}
         {viewMode === "stats" && isManager && <StatsOverview stats={stats} />}
       </div>
 
-      {/* ── Modals ── */}
+      {/* ── Modals ──────────────────────────────────────────────────────────── */}
       {showCreateModal && (
         <CreateTaskModal
           onClose={() => setShowCreateModal(false)}
@@ -463,223 +771,6 @@ export default function HousekeepingPage() {
           }}
         />
       )}
-    </div>
-  );
-}
-
-// ── RoleBadge ──────────────────────────────────────────────
-// Reads from activeOrg.role and activeOrg.department
-// user object has NO role property
-function RoleBadge({
-  role,
-  department,
-}: {
-  role: string;
-  department: string | null;
-}) {
-  const config: Record<string, { label: string; classes: string }> = {
-    OWNER: {
-      label: "Owner",
-      classes: "bg-purple-100 text-purple-700",
-    },
-    ADMIN: {
-      label: "Admin",
-      classes: "bg-blue-100 text-blue-700",
-    },
-    STAFF: {
-      label: department ? `Staff · ${department}` : "Staff",
-      classes: "bg-gray-100 text-gray-600",
-    },
-  };
-
-  const badge = config[role] ?? {
-    label: role,
-    classes: "bg-gray-100 text-gray-600",
-  };
-
-  return (
-    <span
-      className={`text-xs px-2.5 py-0.5 rounded-full font-medium ${badge.classes}`}
-    >
-      {badge.label}
-    </span>
-  );
-}
-
-// ── StatsStrip ─────────────────────────────────────────────
-// Uses imported HousekeepingStats type — fixes "Property does not exist" error
-function StatsStrip({ stats }: { stats: HousekeepingStats }) {
-  const items: {
-    label: string;
-    value: number;
-    color: string;
-  }[] = [
-    {
-      label: "Total",
-      value: stats.total,
-      color: "text-gray-900",
-    },
-    {
-      label: "Pending",
-      value: stats.pending,
-      color: "text-yellow-600",
-    },
-    {
-      label: "In Progress",
-      value: stats.inProgress,
-      color: "text-blue-600",
-    },
-    {
-      label: "Completed",
-      value: stats.completed,
-      color: "text-green-600",
-    },
-    {
-      label: "Inspected",
-      value: stats.inspected,
-      color: "text-purple-600",
-    },
-    {
-      label: "Today",
-      value: stats.todayTasks,
-      color: "text-indigo-600",
-    },
-    {
-      label: "Overdue",
-      value: stats.overdueTasks,
-      color:
-        stats.overdueTasks > 0 ? "text-red-600 font-bold" : "text-gray-400",
-    },
-  ];
-
-  return (
-    <div className="grid grid-cols-4 md:grid-cols-7 gap-2">
-      {items.map((item) => (
-        <div
-          key={item.label}
-          className="bg-gray-50 rounded-lg px-3 py-2 text-center border border-gray-100"
-        >
-          <div className={`text-lg font-bold ${item.color}`}>{item.value}</div>
-          <div className="text-xs text-gray-400 mt-0.5">{item.label}</div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-// ── FilterPanel ────────────────────────────────────────────
-function FilterPanel({
-  filters,
-  onChange,
-  onApply,
-  onClear,
-}: {
-  filters: HousekeepingFilters;
-  onChange: React.Dispatch<React.SetStateAction<HousekeepingFilters>>;
-  onApply: () => void;
-  onClear: () => void;
-}) {
-  return (
-    <div className="bg-white border-b border-gray-200 px-6 py-4">
-      <div className="max-w-screen-2xl mx-auto">
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-          {/* Status */}
-          <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">
-              Status
-            </label>
-            <select
-              value={filters.status ?? ""}
-              onChange={(e) =>
-                onChange((f) => ({
-                  ...f,
-                  status:
-                    (e.target.value as HousekeepingFilters["status"]) ||
-                    undefined,
-                }))
-              }
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">All Statuses</option>
-              <option value="PENDING">Pending</option>
-              <option value="IN_PROGRESS">In Progress</option>
-              <option value="COMPLETED">Completed</option>
-              <option value="INSPECTED">Inspected</option>
-            </select>
-          </div>
-
-          {/* Floor */}
-          <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">
-              Floor
-            </label>
-            <input
-              type="number"
-              placeholder="All floors"
-              value={filters.floor ?? ""}
-              onChange={(e) =>
-                onChange((f) => ({
-                  ...f,
-                  floor: e.target.value ? parseInt(e.target.value) : undefined,
-                }))
-              }
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-
-          {/* Date From */}
-          <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">
-              From Date
-            </label>
-            <input
-              type="date"
-              value={filters.dateFrom ?? ""}
-              onChange={(e) =>
-                onChange((f) => ({
-                  ...f,
-                  dateFrom: e.target.value || undefined,
-                }))
-              }
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-
-          {/* Date To */}
-          <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">
-              To Date
-            </label>
-            <input
-              type="date"
-              value={filters.dateTo ?? ""}
-              onChange={(e) =>
-                onChange((f) => ({
-                  ...f,
-                  dateTo: e.target.value || undefined,
-                }))
-              }
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-
-          {/* Actions */}
-          <div className="flex items-end gap-2">
-            <button
-              onClick={onApply}
-              className="flex-1 px-3 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
-            >
-              Apply
-            </button>
-            <button
-              onClick={onClear}
-              className="px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition-colors"
-            >
-              Clear
-            </button>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

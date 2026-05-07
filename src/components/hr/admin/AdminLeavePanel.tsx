@@ -1,8 +1,5 @@
-// src/components/hr/admin/AdminLeavePanel.tsx
-
 import { useEffect, useState } from "react";
 import { useHrStore } from "@/store/hr/useHrStore";
-import { hrService } from "@/services/hr/hrService";
 import SectionCard from "@/components/hr/shared/SectionCard";
 import EmptyState from "@/components/hr/shared/EmptyState";
 import { LeaveStatusBadge } from "@/components/hr/shared/StatusBadge";
@@ -15,7 +12,6 @@ import {
   RefreshCw,
   ChevronLeft,
   ChevronRight,
-  Search,
   SlidersHorizontal,
 } from "lucide-react";
 import { format } from "date-fns";
@@ -336,8 +332,8 @@ function LeaveRequestRow({
     <tr className="hover:bg-slate-50/50 transition-colors">
       <td className="px-5 py-4">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-100 to-emerald-200 flex items-center justify-center shrink-0">
-            <span className="text-xs font-bold text-emerald-700">
+          <div className="w-8 h-8 rounded-full bg-linear-to-br from-stone-100 to-stone-200 flex items-center justify-center shrink-0">
+            <span className="text-xs font-bold text-stone-700">
               {request.user.name.charAt(0).toUpperCase()}
             </span>
           </div>

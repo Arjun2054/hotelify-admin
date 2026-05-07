@@ -175,7 +175,7 @@ export default function AdminPayslipPanel() {
 
         <button
           onClick={() => setShowGenerate(true)}
-          className="ml-auto flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition-colors"
+          className="ml-auto flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-stone-700 hover:bg-stone-800 rounded-lg transition-colors"
         >
           <Plus className="w-4 h-4" />
           Generate Payslip
@@ -199,7 +199,7 @@ export default function AdminPayslipPanel() {
             action={
               <button
                 onClick={() => setShowGenerate(true)}
-                className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition-colors"
+                className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-stone-700 hover:bg-stone-800 rounded-lg transition-colors"
               >
                 <Plus className="w-4 h-4" />
                 Generate Payslip
@@ -332,7 +332,7 @@ function PayslipRow({
     <tr className="hover:bg-slate-50/50 transition-colors">
       <td className="px-5 py-4">
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-full bg-gradient-to-br from-violet-100 to-violet-200 flex items-center justify-center shrink-0">
+          <div className="w-7 h-7 rounded-full bg-linear-to-br from-violet-100 to-violet-200 flex items-center justify-center shrink-0">
             <span className="text-xs font-bold text-violet-700">
               {payslip.user.name.charAt(0).toUpperCase()}
             </span>

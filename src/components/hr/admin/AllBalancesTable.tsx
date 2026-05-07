@@ -1,7 +1,6 @@
 // src/components/hr/admin/AllBalancesTable.tsx
 
 import { useEffect, useState } from "react";
-import { useHrStore } from "@/store/hr/useHrStore";
 import { hrService } from "@/services/hr/hrService";
 import SectionCard from "@/components/hr/shared/SectionCard";
 import EmptyState from "@/components/hr/shared/EmptyState";
@@ -10,8 +9,6 @@ import { Users, RefreshCw, Pencil, Check, X } from "lucide-react";
 import { toast } from "sonner";
 
 export default function AllBalancesTable() {
-  const { fetchAllBalances } = useHrStore();
-
   const [year, setYear] = useState(new Date().getFullYear());
   const [rawBalances, setRawBalances] = useState<BalanceRecord[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -108,7 +105,7 @@ export default function AllBalancesTable() {
             <div key={user.userId} className="px-5 py-4">
               {/* User header */}
               <div className="flex items-center gap-3 mb-3">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-slate-200 to-slate-300 flex items-center justify-center shrink-0">
+                <div className="w-8 h-8 rounded-full bg-linear-to-br from-stone-200 to-stone-300 flex items-center justify-center shrink-0">
                   <span className="text-xs font-bold text-slate-600">
                     {user.name.charAt(0).toUpperCase()}
                   </span>

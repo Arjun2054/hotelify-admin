@@ -97,7 +97,7 @@ export function OrgServiceCard({
           <div
             className={cn(
               "absolute top-0 left-0 right-0 h-0.5",
-              "bg-linear-to-r from-transparent via-green-400 to-transparent",
+              "bg-linear-to-r from-transparent to-transparent",
             )}
           />
         )}

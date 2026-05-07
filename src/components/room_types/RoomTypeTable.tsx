@@ -138,6 +138,7 @@ interface Props {
   roomTypes: RoomType[];
   onEdit: (rt: RoomType) => void;
   onDelete: (rt: RoomType) => void;
+  isManager: boolean;
 }
 
 // ============================================================================
@@ -163,7 +164,12 @@ function EmptyState() {
 // MAIN TABLE COMPONENT
 // ============================================================================
 
-export function RoomTypeTable({ roomTypes, onEdit, onDelete }: Props) {
+export function RoomTypeTable({
+  roomTypes,
+  onEdit,
+  onDelete,
+  isManager,
+}: Props) {
   if (!roomTypes || roomTypes.length === 0) {
     return <EmptyState />;
   }
@@ -302,34 +308,36 @@ export function RoomTypeTable({ roomTypes, onEdit, onDelete }: Props) {
                   </TableCell>
 
                   {/* Actions */}
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <MoreHorizontal className="h-4 w-4" />
-                          <span className="sr-only">Actions</span>
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-40">
-                        <DropdownMenuItem onClick={() => onEdit(rt)}>
-                          <Pencil className="h-4 w-4 mr-2" />
-                          Edit
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          onClick={() => onDelete(rt)}
-                          className="text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-950"
-                        >
-                          <Trash2 className="h-4 w-4 mr-2" />
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
+                  {isManager && (
+                    <TableCell>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <MoreHorizontal className="h-4 w-4" />
+                            <span className="sr-only">Actions</span>
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-40">
+                          <DropdownMenuItem onClick={() => onEdit(rt)}>
+                            <Pencil className="h-4 w-4 mr-2" />
+                            Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            onClick={() => onDelete(rt)}
+                            className="text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-950"
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  )}
                 </TableRow>
               );
             })}

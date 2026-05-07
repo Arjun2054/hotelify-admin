@@ -1,8 +1,6 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
 import {
   AlertCircle,
   Plus,
@@ -10,6 +8,9 @@ import {
   Utensils,
   LayoutGrid,
   Building2,
+  ShieldAlert,
+  Lock,
+  ChefHat,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -19,47 +20,87 @@ import { OrgServiceCard } from "@/components/fnb/updates/OrgServiceCard";
 import { FnbSetupWizard } from "@/components/fnb/updates/FnbSetupWizard";
 import { useAuthStore } from "@/store/useAuthStore";
 
-// ── Empty state ────────────────────────────────────────────────────────────────
-function EmptyState({ onSetup }: { onSetup: () => void }) {
+// ── Read-only empty state ─────────────────────────────────────────────────────
+function ReadOnlyEmptyState() {
   return (
-    <div className="flex flex-col items-center justify-center py-20 text-center">
-      <div className="relative mb-6">
-        <div className="w-20 h-20 rounded-2xl bg-linear-to-br from-primary/10 to-primary/5 flex items-center justify-center border border-primary/10">
-          <Utensils className="w-9 h-9 text-primary/60" />
+    <div className="flex flex-col items-center justify-center py-24 text-center">
+      <div className="flex items-center justify-center w-16 h-16 rounded-2xl bg-stone-100 border border-stone-200 mb-5">
+        <Utensils className="w-7 h-7 text-stone-400" />
+      </div>
+      <h3
+        className="font-semibold text-gray-800 mb-1"
+        style={{ fontSize: "15px" }}
+      >
+        No F&B services configured
+      </h3>
+      <p
+        className="text-gray-400 max-w-xs leading-relaxed"
+        style={{ fontSize: "12px" }}
+      >
+        Your property has no food & beverage services set up yet. Contact an{" "}
+        <span className="font-semibold text-gray-500">admin or owner</span> to
+        configure available services.
+      </p>
+    </div>
+  );
+}
+
+// ── Manager empty state ───────────────────────────────────────────────────────
+function EmptyState({ onSetup }: { onSetup: () => void }) {
+  const serviceTypes = [
+    { icon: "🍽️", label: "Restaurant" },
+    { icon: "🥘", label: "Buffet" },
+    { icon: "🍸", label: "Bar & Lounge" },
+    { icon: "🛎️", label: "Room Service" },
+    { icon: "🎉", label: "Banquet" },
+    { icon: "☕", label: "Café" },
+  ];
+
+  return (
+    <div className="flex flex-col items-center justify-center py-24 text-center px-6">
+      {/* Icon cluster */}
+      <div className="relative mb-7">
+        <div className="flex items-center justify-center w-20 h-20 rounded-2xl bg-stone-100 border border-stone-200">
+          <ChefHat className="w-9 h-9 text-stone-500" />
         </div>
-        <div className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-primary flex items-center justify-center">
-          <Plus className="w-3.5 h-3.5 text-white" strokeWidth={3} />
-        </div>
+        <span className="absolute -top-1.5 -right-1.5 flex items-center justify-center w-7 h-7 rounded-full bg-stone-800 border-2 border-white shadow-sm">
+          <Plus className="w-3.5 h-3.5 text-white" strokeWidth={2.5} />
+        </span>
       </div>
 
-      <h3 className="text-lg font-semibold text-gray-900">
-        No F&B services yet
+      <h3 className="font-bold text-gray-800 mb-2" style={{ fontSize: "18px" }}>
+        No F&B Services Yet
       </h3>
-      <p className="text-sm text-muted-foreground mt-2 mb-6 max-w-sm leading-relaxed">
+      <p
+        className="text-gray-400 max-w-sm leading-relaxed mb-7"
+        style={{ fontSize: "13px" }}
+      >
         Add the food & beverage services your property offers — restaurant, bar,
         room service, and more.
       </p>
 
-      {/* Service type preview */}
+      {/* Service type preview chips */}
       <div className="flex flex-wrap justify-center gap-2 mb-8">
-        {[
-          { icon: "🍽️", label: "Restaurant" },
-          { icon: "🥘", label: "Buffet" },
-          { icon: "🍸", label: "Bar" },
-          { icon: "🛋️", label: "Lounge" },
-          { icon: "🛎️", label: "Room Service" },
-          { icon: "🎉", label: "Banquet" },
-        ].map((s) => (
+        {serviceTypes.map((s) => (
           <span
             key={s.label}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted text-sm text-muted-foreground border"
+            className={cn(
+              "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full",
+              "bg-white border border-gray-200 text-gray-500 shadow-sm",
+            )}
+            style={{ fontSize: "12px" }}
           >
-            {s.icon} {s.label}
+            <span style={{ fontSize: "14px" }}>{s.icon}</span>
+            {s.label}
           </span>
         ))}
       </div>
 
-      <Button size="lg" onClick={onSetup} className="gap-2">
+      <Button
+        onClick={onSetup}
+        className="h-10 px-6 rounded-xl bg-stone-800 hover:bg-stone-700 text-white gap-2 shadow-sm font-semibold"
+        style={{ fontSize: "13px" }}
+      >
         <Settings2 className="w-4 h-4" />
         Set Up F&B Services
       </Button>
@@ -67,44 +108,30 @@ function EmptyState({ onSetup }: { onSetup: () => void }) {
   );
 }
 
-// ── Stats bar ──────────────────────────────────────────────────────────────────
-function StatsBar({ created, enabled }: { created: number; enabled: number }) {
+// ── No-org guard ──────────────────────────────────────────────────────────────
+function NoOrgState() {
   return (
-    <div className="flex flex-wrap gap-3">
-      {[
-        {
-          label: "Services Added",
-          value: created,
-          badge: "bg-blue-100 text-blue-700",
-        },
-        {
-          label: "Active",
-          value: enabled,
-          badge: "bg-green-100 text-green-700",
-        },
-        {
-          label: "Inactive",
-          value: created - enabled,
-          badge: "bg-gray-100 text-gray-600",
-        },
-      ].map((s) => (
-        <div
-          key={s.label}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white border shadow-sm"
-        >
-          <Badge className={cn("text-xs border-0 font-semibold", s.badge)}>
-            {s.value}
-          </Badge>
-          <span className="text-sm text-muted-foreground">{s.label}</span>
+    <div className="min-h-screen bg-[#f9f7f4] flex items-center justify-center p-6">
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-md p-10 max-w-md w-full text-center">
+        <div className="flex items-center justify-center w-14 h-14 rounded-2xl bg-amber-50 border border-amber-200 mx-auto mb-5">
+          <Building2 className="w-7 h-7 text-amber-600" />
         </div>
-      ))}
+        <h2
+          className="font-bold text-gray-800 mb-2"
+          style={{ fontSize: "16px" }}
+        >
+          No Organization Selected
+        </h2>
+        <p className="text-gray-400" style={{ fontSize: "12px" }}>
+          Please select an organization to continue.
+        </p>
+      </div>
     </div>
   );
 }
 
 // ── Page ───────────────────────────────────────────────────────────────────────
 export default function FnbServicesPage() {
-  // ── Auth Store ────────────────────────────────────────────
   const { getActiveOrganization, canPerformAction } = useAuthStore();
 
   const {
@@ -122,18 +149,13 @@ export default function FnbServicesPage() {
 
   const [showWizard, setShowWizard] = useState(false);
 
-  // ── Derived Identity ──────────────────────────────────────
-  // role and department live in activeOrg, NOT in user object
   const activeOrg = getActiveOrganization();
-
-  // Convenience flags
   const isManager = canPerformAction(["OWNER", "ADMIN"]);
 
   useEffect(() => {
     fetchServices();
   }, []);
 
-  // Partition into created vs not-yet-created
   const created = services.filter((s) => s.isCreated);
   const notCreated = services.filter((s) => !s.isCreated);
   const enabledCount = created.filter((s) => s.isEnabled).length;
@@ -171,142 +193,304 @@ export default function FnbServicesPage() {
     }
   };
 
+  // ── Guards ────────────────────────────────────────────────────────────────
+  if (!activeOrg) return <NoOrgState />;
+
   if (isLoading && services.length === 0) {
     return (
-      <div className="space-y-6">
-        <div className="space-y-1">
-          <Skeleton className="h-7 w-52" />
-          <Skeleton className="h-4 w-80" />
-        </div>
-        <div className="flex gap-3">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <Skeleton key={i} className="h-10 w-32 rounded-xl" />
-          ))}
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <Skeleton key={i} className="h-44 rounded-xl" />
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  // ── Guard: No Organization ────────────────────────────────
-  if (!activeOrg) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
-        <div className="bg-white rounded-2xl border border-gray-200 p-10 max-w-md w-full text-center">
-          <div className="w-16 h-16 bg-yellow-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <Building2 className="w-8 h-8 text-yellow-600" />
+      <div className="min-h-screen bg-[#f9f7f4]">
+        {/* Hero skeleton */}
+        <div className="bg-linear-to-br from-stone-800 to-stone-900 px-8 py-10">
+          <div className="space-y-3">
+            <Skeleton className="h-3 w-48 bg-white/10 rounded-full" />
+            <Skeleton className="h-7 w-64 bg-white/10 rounded-lg" />
+            <Skeleton className="h-4 w-80 bg-white/10 rounded-lg" />
+            <div className="flex gap-3 pt-3">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <Skeleton
+                  key={i}
+                  className="h-12 w-28 rounded-xl bg-white/10"
+                />
+              ))}
+            </div>
           </div>
-          <h2 className="text-xl font-bold text-gray-900 mb-2">
-            No Organization Selected
-          </h2>
-          <p className="text-gray-500 text-sm">
-            Please select an organization to continue.
-          </p>
+        </div>
+        <div className="px-8 py-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <Skeleton key={i} className="h-48 rounded-2xl" />
+            ))}
+          </div>
         </div>
       </div>
     );
   }
 
+  // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <div className="space-y-6">
-      {/* ── Header ──────────────────────────────────────────────────────────── */}
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-            <LayoutGrid className="w-5 h-5 text-primary" />
-            F&B Services
-          </h2>
-          <p className="text-sm text-muted-foreground mt-1">
-            Manage the food & beverage services available at your property.
-          </p>
+    <div className="min-h-screen">
+      {/* ── Hero header ─────────────────────────────────────────────────────── */}
+      <div className="relative overflow-hidden bg-linear-to-br from-stone-800 via-stone-700 to-stone-900 px-8 py-10">
+        {/* Decorative blobs */}
+        <div className="absolute -top-12 -right-12 w-56 h-56 rounded-full bg-white/5 pointer-events-none" />
+        <div className="absolute -bottom-20 -left-8 w-64 h-64 rounded-full bg-white/5 pointer-events-none" />
+        <div className="absolute top-6 right-52 w-20 h-20 rounded-full bg-white/3 pointer-events-none" />
+
+        <div className="relative flex items-start justify-between gap-6 flex-wrap">
+          {/* Left: icon + title */}
+          <div className="flex items-center gap-4">
+            <div className="flex items-center justify-center w-12 h-12 rounded-2xl bg-white/10 border border-white/20 backdrop-blur-sm shrink-0">
+              <LayoutGrid className="w-6 h-6 text-white" />
+            </div>
+
+            <div>
+              {/* Breadcrumb */}
+              <div className="flex items-center gap-2 mb-1">
+                <p
+                  className="uppercase tracking-widest font-semibold text-stone-400"
+                  style={{ fontSize: "10px" }}
+                >
+                  Food &amp; Beverage
+                </p>
+                <span className="w-1 h-1 rounded-full bg-stone-500" />
+                <p
+                  className="uppercase tracking-widest font-semibold text-stone-400"
+                  style={{ fontSize: "10px" }}
+                >
+                  Services
+                </p>
+              </div>
+
+              <h1
+                className="font-bold text-white leading-tight tracking-tight"
+                style={{ fontSize: "22px" }}
+              >
+                F&amp;B Services
+              </h1>
+
+              <div className="flex items-center gap-2 mt-1 flex-wrap">
+                <p
+                  className="text-stone-300 leading-snug"
+                  style={{ fontSize: "13px" }}
+                >
+                  Manage the food & beverage services at your property
+                </p>
+
+                {/* Role pill */}
+                {!isManager && (
+                  <span
+                    className={cn(
+                      "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full",
+                      "bg-amber-400/20 border border-amber-400/30 text-amber-300 font-medium",
+                    )}
+                    style={{ fontSize: "10px" }}
+                  >
+                    <Lock className="w-2.5 h-2.5" />
+                    View only
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Right: CTA */}
+          {created.length > 0 && notCreated.length > 0 && isManager && (
+            <Button
+              onClick={() => setShowWizard(true)}
+              className="h-9 px-5 rounded-xl gap-2 bg-white text-stone-800 hover:bg-stone-50 font-semibold shadow-md shrink-0"
+              style={{ fontSize: "13px" }}
+            >
+              <Plus className="w-3.5 h-3.5" />
+              Add Services
+            </Button>
+          )}
         </div>
 
-        {created.length > 0 && notCreated.length > 0 && isManager && (
-          <Button
-            onClick={() => setShowWizard(true)}
-            className="gap-2 shrink-0"
-          >
-            <Plus className="w-4 h-4" />
-            Add Services
-          </Button>
+        {/* ── Stat strip ────────────────────────────────────────────────── */}
+        {created.length > 0 && (
+          <div className="relative mt-7 flex items-center gap-3 flex-wrap">
+            {[
+              { label: "Services Added", value: created.length },
+              { label: "Active", value: enabledCount },
+              { label: "Inactive", value: created.length - enabledCount },
+              { label: "Available to Add", value: notCreated.length },
+            ].map((stat) => (
+              <div
+                key={stat.label}
+                className="flex items-center gap-2.5 px-3.5 py-2 rounded-xl bg-white/10 border border-white/15 backdrop-blur-sm"
+              >
+                <span
+                  className="font-bold text-white leading-none"
+                  style={{ fontSize: "15px" }}
+                >
+                  {stat.value}
+                </span>
+                <span
+                  className="text-stone-300 leading-none"
+                  style={{ fontSize: "11px" }}
+                >
+                  {stat.label}
+                </span>
+              </div>
+            ))}
+          </div>
         )}
       </div>
 
-      {/* ── Error ───────────────────────────────────────────────────────────── */}
-      {error && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription className="flex items-center justify-between">
-            <span>{error}</span>
+      {/* ── Body ────────────────────────────────────────────────────────────── */}
+      <div className="px-8 py-6 space-y-5">
+        {/* Error banner */}
+        {error && (
+          <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-red-50 border border-red-200/70">
+            <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-red-100 shrink-0">
+              <AlertCircle className="w-4 h-4 text-red-600" />
+            </span>
+            <p className="text-red-700 flex-1" style={{ fontSize: "12px" }}>
+              {error}
+            </p>
             <button
-              className="underline text-xs ml-2"
+              className="text-red-500 hover:text-red-700 underline shrink-0 transition-colors"
+              style={{ fontSize: "11px" }}
               onClick={() => setError(null)}
             >
               Dismiss
             </button>
-          </AlertDescription>
-        </Alert>
-      )}
+          </div>
+        )}
 
-      {/* ── Empty state ─────────────────────────────────────────────────────── */}
-      {created.length === 0 && !isLoading ? (
-        isManager ? (
-          <EmptyState onSetup={() => setShowWizard(true)} />
+        {/* Read-only banner */}
+        {!isManager && created.length > 0 && (
+          <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-amber-50 border border-amber-200/70">
+            <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-amber-100 shrink-0">
+              <ShieldAlert className="w-4 h-4 text-amber-600" />
+            </span>
+            <p
+              className="text-amber-700 leading-snug"
+              style={{ fontSize: "12px" }}
+            >
+              You have <span className="font-semibold">view-only</span> access.
+              Contact an <span className="font-semibold">admin or owner</span>{" "}
+              to manage services.
+            </p>
+          </div>
+        )}
+
+        {/* ── Empty state ────────────────────────────────────────────────── */}
+        {created.length === 0 && !isLoading ? (
+          isManager ? (
+            <EmptyState onSetup={() => setShowWizard(true)} />
+          ) : (
+            <ReadOnlyEmptyState />
+          )
         ) : (
-          <ReadOnlyEmptyState /> // ← new component below
-        )
-      ) : (
-        <>
-          {/* Stats */}
-          <StatsBar created={created.length} enabled={enabledCount} />
+          <>
+            {/* ── Section label ──────────────────────────────────────────── */}
+            <div className="flex items-center gap-2">
+              <p
+                className="uppercase tracking-widest font-semibold text-gray-400"
+                style={{ fontSize: "10px" }}
+              >
+                Configured Services
+              </p>
+              <div className="flex-1 h-px bg-gray-200" />
+              <span
+                className="px-2 py-0.5 rounded-full bg-white border border-gray-200 text-gray-400 font-medium shadow-sm"
+                style={{ fontSize: "10px" }}
+              >
+                {created.length}
+              </span>
+            </div>
 
-          {/* Service cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {created.map((entry) => (
-              <OrgServiceCard
-                key={entry.type}
-                entry={entry}
-                onToggle={handleToggle}
-                onRemove={handleRemove}
-                isToggling={
-                  isTogglingService[entry.orgService?.id ?? ""] ?? false
-                }
-                isManager={isManager}
-              />
-            ))}
+            {/* ── Service cards grid ─────────────────────────────────────── */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {created.map((entry) => (
+                <OrgServiceCard
+                  key={entry.type}
+                  entry={entry}
+                  onToggle={handleToggle}
+                  onRemove={handleRemove}
+                  isToggling={
+                    isTogglingService[entry.orgService?.id ?? ""] ?? false
+                  }
+                  isManager={isManager}
+                />
+              ))}
 
-            {/* "Add more" card — shown when some types are still available */}
-            {notCreated.length > 0 && isManager && (
-              <button
-                onClick={() => setShowWizard(true)}
+              {/* "Add more" card */}
+              {notCreated.length > 0 && isManager && (
+                <button
+                  onClick={() => setShowWizard(true)}
+                  className={cn(
+                    "group rounded-2xl border-2 border-dashed border-stone-200 p-6",
+                    "flex flex-col items-center justify-center gap-3 text-center",
+                    "hover:border-stone-400 hover:bg-stone-50",
+                    "transition-all duration-200 min-h-44",
+                  )}
+                >
+                  <div
+                    className={cn(
+                      "flex items-center justify-center w-10 h-10 rounded-xl",
+                      "bg-stone-100 group-hover:bg-stone-200 transition-colors",
+                    )}
+                  >
+                    <Plus className="w-5 h-5 text-stone-500" />
+                  </div>
+                  <div>
+                    <p
+                      className="font-semibold text-stone-500 group-hover:text-stone-700 transition-colors"
+                      style={{ fontSize: "13px" }}
+                    >
+                      Add More Services
+                    </p>
+                    <p
+                      className="text-stone-400 mt-0.5"
+                      style={{ fontSize: "11px" }}
+                    >
+                      {notCreated.length} service
+                      {notCreated.length !== 1 ? "s" : ""} available
+                    </p>
+                  </div>
+                </button>
+              )}
+            </div>
+
+            {/* ── Informational footer note ──────────────────────────────── */}
+            {created.length > 0 && (
+              <div
                 className={cn(
-                  "rounded-xl border-2 border-dashed border-gray-200 p-6",
-                  "flex flex-col items-center justify-center gap-3 text-center",
-                  "text-muted-foreground hover:border-primary/40 hover:text-primary",
-                  "hover:bg-primary/5 transition-all duration-200 min-h-44",
+                  "flex items-start gap-3 px-4 py-3 rounded-xl",
+                  "bg-white border border-gray-100 shadow-sm",
                 )}
               >
-                <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
-                  <Plus className="w-5 h-5" />
+                <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-stone-100 shrink-0 mt-0.5">
+                  <ChefHat className="w-3.5 h-3.5 text-stone-500" />
                 </div>
                 <div>
-                  <p className="font-medium text-sm">Add More Services</p>
-                  <p className="text-xs mt-0.5">
-                    {notCreated.length} service
-                    {notCreated.length !== 1 ? "s" : ""} available
+                  <p
+                    className="font-semibold text-gray-700"
+                    style={{ fontSize: "12px" }}
+                  >
+                    Assigning Menus
+                  </p>
+                  <p
+                    className="text-gray-400 mt-0.5"
+                    style={{ fontSize: "11px" }}
+                  >
+                    Navigate to{" "}
+                    <span className="font-medium text-gray-500">
+                      Menus → Create / Edit Menu
+                    </span>{" "}
+                    and assign it to one or more of these services. Guests will
+                    see the menu under the respective service outlet.
                   </p>
                 </div>
-              </button>
+              </div>
             )}
-          </div>
-        </>
-      )}
+          </>
+        )}
+      </div>
 
-      {/* ── Setup Wizard ─────────────────────────────────────────────────────── */}
+      {/* ── Setup Wizard ──────────────────────────────────────────────────── */}
       <FnbSetupWizard
         open={showWizard}
         onClose={() => setShowWizard(false)}
@@ -314,23 +498,6 @@ export default function FnbServicesPage() {
         alreadyCreated={created.map((s) => s.type)}
         isLoading={isSubmitting}
       />
-    </div>
-  );
-}
-// Drop inside FnbServicesPage.tsx above the page component
-function ReadOnlyEmptyState() {
-  return (
-    <div className="flex flex-col items-center justify-center py-20 text-center">
-      <div className="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center border border-gray-200 mb-4">
-        <Utensils className="w-7 h-7 text-gray-400" />
-      </div>
-      <h3 className="text-lg font-semibold text-gray-900">
-        No F&B services configured
-      </h3>
-      <p className="text-sm text-muted-foreground mt-2 max-w-sm leading-relaxed">
-        Your property has no food & beverage services set up yet. Contact an{" "}
-        <strong>admin or owner</strong> to configure available services.
-      </p>
     </div>
   );
 }
