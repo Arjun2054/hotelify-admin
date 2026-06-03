@@ -499,11 +499,11 @@ export default function HousekeepingPage() {
       )}
 
       {/* ── Hero header ─────────────────────────────────────────────────────── */}
-      <div className="relative overflow-hidden bg-linear-to-br from-stone-800 via-stone-700 to-stone-900 px-8 pt-8 pb-0">
+      <div className="relative shrink-0 bg-linear-to-r from-primary via-primary/90 to-primary/75 px-10 py-7 text-primary-foreground overflow-hidden">
         {/* Decorative blobs */}
-        <div className="absolute -top-12 -right-12 w-56 h-56 rounded-full bg-white/5 pointer-events-none" />
-        <div className="absolute -bottom-20 -left-8 w-64 h-64 rounded-full bg-white/5 pointer-events-none" />
-        <div className="absolute top-6 right-52 w-20 h-20 rounded-full bg-white/3 pointer-events-none" />
+        <div className="pointer-events-none absolute -top-10 -right-10 h-48 w-48 rounded-full bg-white/5" />
+        <div className="pointer-events-none absolute -bottom-8 right-24 h-32 w-32 rounded-full bg-white/5" />
+        <div className="pointer-events-none absolute top-4 right-64 h-16 w-16 rounded-full bg-white/5" />
 
         <div className="relative max-w-screen-2xl mx-auto space-y-5">
           {/* Title row */}

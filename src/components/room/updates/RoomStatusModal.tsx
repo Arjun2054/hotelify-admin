@@ -1,4 +1,3 @@
-// src/components/room/RoomStatusModal.tsx
 import { useState } from "react";
 import {
   Dialog,
@@ -18,6 +17,7 @@ import {
   Wrench,
   AlertTriangle,
   ArrowRight,
+  Check,
 } from "lucide-react";
 
 interface RoomStatusModalProps {
@@ -27,57 +27,48 @@ interface RoomStatusModalProps {
   onConfirm: (id: string, status: RoomStatus) => Promise<void>;
 }
 
-const STATUS_OPTIONS: {
+interface StatusOption {
   value: RoomStatus;
   label: string;
   description: string;
   icon: React.ElementType;
-  className: string;
+  iconTone: string;
   disabled?: (current: RoomStatus) => boolean;
-}[] = [
+}
+
+const STATUS_OPTIONS: StatusOption[] = [
   {
     value: "AVAILABLE",
     label: "Available",
-    description: "Room is clean and ready for new guests",
+    description: "Clean and ready for new guests",
     icon: CheckCircle2,
-    className:
-      "border-emerald-200 bg-emerald-50/50 data-[selected=true]:border-emerald-500 data-[selected=true]:bg-emerald-50 dark:border-emerald-800 dark:bg-emerald-950/20",
+    iconTone: "text-emerald-600 dark:text-emerald-400",
   },
   {
     value: "CLEANING",
     label: "Cleaning",
-    description: "Room is currently being cleaned",
+    description: "Housekeeping is in progress",
     icon: Sparkles,
-    className:
-      "border-amber-200 bg-amber-50/50 data-[selected=true]:border-amber-500 data-[selected=true]:bg-amber-50 dark:border-amber-800 dark:bg-amber-950/20",
+    iconTone: "text-amber-600 dark:text-amber-400",
     disabled: (s) => s === "OCCUPIED",
   },
   {
     value: "MAINTENANCE",
     label: "Maintenance",
-    description: "Room needs maintenance or repairs",
+    description: "Needs repairs or service",
     icon: Wrench,
-    className:
-      "border-orange-200 bg-orange-50/50 data-[selected=true]:border-orange-500 data-[selected=true]:bg-orange-50 dark:border-orange-800 dark:bg-orange-950/20",
+    iconTone: "text-orange-600 dark:text-orange-400",
     disabled: (s) => s === "OCCUPIED",
   },
   {
     value: "OUT_OF_ORDER",
-    label: "Out of Order",
-    description: "Room is unavailable for any reason",
+    label: "Out of order",
+    description: "Unavailable until further notice",
     icon: AlertTriangle,
-    className:
-      "border-red-200 bg-red-50/50 data-[selected=true]:border-red-500 data-[selected=true]:bg-red-50 dark:border-red-800 dark:bg-red-950/20",
+    iconTone: "text-red-600 dark:text-red-400",
     disabled: (s) => s === "OCCUPIED",
   },
 ];
-
-const ICON_COLORS: Record<string, string> = {
-  AVAILABLE: "text-emerald-600 dark:text-emerald-400",
-  CLEANING: "text-amber-600 dark:text-amber-400",
-  MAINTENANCE: "text-orange-600 dark:text-orange-400",
-  OUT_OF_ORDER: "text-red-600 dark:text-red-400",
-};
 
 export function RoomStatusModal({
   isOpen,
@@ -111,84 +102,138 @@ export function RoomStatusModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-sm">
-        <DialogHeader>
-          <DialogTitle>Update Room Status</DialogTitle>
-          <DialogDescription>
-            Change the status of Room {room.roomNumber}
+      <DialogContent className="gap-0 p-0 sm:max-w-md">
+        {/* ── Header ── */}
+        <DialogHeader className="space-y-1.5 px-6 pt-6 pb-5">
+          <DialogTitle className="text-base font-semibold tracking-tight">
+            Update room status
+          </DialogTitle>
+          <DialogDescription className="text-xs text-muted-foreground">
+            Change the operational status of room {room.roomNumber}.
           </DialogDescription>
         </DialogHeader>
 
-        {/* Current status */}
-        <div className="flex items-center gap-2 rounded-lg bg-muted/50 px-3 py-2 text-sm">
-          <span className="text-muted-foreground">Current:</span>
+        {/* ── Transition strip ── */}
+        <div className="flex items-center gap-3 border-y border-border/60 bg-muted/30 px-6 py-3 text-xs">
+          <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+            From
+          </span>
           <RoomStatusBadge status={room.status} showDot />
-          {selected && (
-            <>
-              <ArrowRight className="h-3.5 w-3.5 text-muted-foreground mx-1" />
-              <RoomStatusBadge status={selected} showDot />
-            </>
+          <ArrowRight className="h-3.5 w-3.5 text-muted-foreground/60" />
+          <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+            To
+          </span>
+          {selected ? (
+            <RoomStatusBadge status={selected} showDot />
+          ) : (
+            <span className="text-xs text-muted-foreground/70 italic">
+              Select below
+            </span>
           )}
         </div>
 
-        {/* Options */}
-        <div className="space-y-2">
-          {STATUS_OPTIONS.map((opt) => {
-            const isDisabled =
-              opt.disabled?.(room.status) || opt.value === room.status;
-            const isSelected = selected === opt.value;
+        {/* ── Options ── */}
+        <div className="px-6 py-5">
+          <p className="mb-3 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+            New status
+          </p>
 
-            return (
-              <button
-                key={opt.value}
-                disabled={isDisabled}
-                onClick={() => setSelected(opt.value)}
-                data-selected={isSelected}
-                className={cn(
-                  "w-full rounded-xl border p-3 text-left transition-all duration-150",
-                  "disabled:cursor-not-allowed disabled:opacity-40",
-                  opt.className,
-                )}
-              >
-                <div className="flex items-center gap-3">
-                  <opt.icon
+          <div
+            role="radiogroup"
+            aria-label="Room status"
+            className="divide-y divide-border/60 overflow-hidden rounded-md border border-border/60"
+          >
+            {STATUS_OPTIONS.map((opt) => {
+              const isDisabled =
+                opt.disabled?.(room.status) || opt.value === room.status;
+              const isCurrent = opt.value === room.status;
+              const isSelected = selected === opt.value;
+              const Icon = opt.icon;
+
+              return (
+                <button
+                  key={opt.value}
+                  type="button"
+                  role="radio"
+                  aria-checked={isSelected}
+                  disabled={isDisabled}
+                  onClick={() => setSelected(opt.value)}
+                  className={cn(
+                    "group flex w-full items-center gap-3 px-3.5 py-3 text-left transition-colors",
+                    "focus:outline-none focus-visible:bg-muted/60",
+                    !isDisabled && "hover:bg-muted/40 cursor-pointer",
+                    isDisabled && "cursor-not-allowed opacity-50",
+                    isSelected && "bg-muted/60",
+                  )}
+                >
+                  <Icon
                     className={cn(
-                      "h-4 w-4 flex-shrink-0",
-                      ICON_COLORS[opt.value],
+                      "h-4 w-4 shrink-0",
+                      isDisabled ? "text-muted-foreground" : opt.iconTone,
                     )}
                   />
-                  <div className="flex-1">
-                    <p className="text-sm font-medium">{opt.label}</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">
+
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-medium leading-none">
+                        {opt.label}
+                      </p>
+                      {isCurrent && (
+                        <span className="rounded-sm bg-muted px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                          Current
+                        </span>
+                      )}
+                    </div>
+                    <p className="mt-1 text-xs text-muted-foreground">
                       {opt.description}
                     </p>
                   </div>
-                  {isSelected && (
-                    <CheckCircle2 className="h-4 w-4 text-primary flex-shrink-0" />
-                  )}
-                </div>
-              </button>
-            );
-          })}
+
+                  {/* Radio indicator */}
+                  <span
+                    aria-hidden
+                    className={cn(
+                      "flex h-4 w-4 shrink-0 items-center justify-center rounded-full border transition-colors",
+                      isSelected
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-border bg-background",
+                    )}
+                  >
+                    {isSelected && <Check className="h-2.5 w-2.5" />}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          {room.status === "OCCUPIED" && (
+            <p className="mt-3 flex items-start gap-1.5 text-[11px] text-muted-foreground">
+              <AlertTriangle className="mt-px h-3 w-3 shrink-0" />
+              An occupied room must be checked out before changing status.
+            </p>
+          )}
         </div>
 
-        <DialogFooter className="gap-2 sm:gap-0">
+        {/* ── Footer ── */}
+        <DialogFooter className="gap-2 border-t border-border/60 bg-muted/20 px-6 py-4 sm:gap-2">
           <Button
-            variant="outline"
+            variant="ghost"
+            size="sm"
             onClick={() => handleOpenChange(false)}
             disabled={isLoading}
           >
             Cancel
           </Button>
           <Button
+            size="sm"
             onClick={handleConfirm}
             disabled={!selected || isLoading}
-            className="gap-2"
+            className="gap-1.5"
           >
-            {isLoading ? (
-              <span className="h-4 w-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
-            ) : null}
-            Update Status
+            {isLoading && (
+              <span className="h-3.5 w-3.5 rounded-full border-2 border-current/30 border-t-current animate-spin" />
+            )}
+            Update status
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -1,4 +1,3 @@
-// src/components/room/CheckInModal.tsx
 import { useState } from "react";
 import {
   Dialog,
@@ -12,20 +11,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Separator } from "@/components/ui/separator";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { RoomStatusBadge } from "@/components/room/RoomStatusBadge";
 import type { Room, CheckInPayload } from "@/types/room-types";
-import {
-  BedDouble,
-  User,
-  Mail,
-  Calendar,
-  LogIn,
-  DollarSign,
-  AlertCircle,
-} from "lucide-react";
-import { cn } from "@/lib/utils";
+import { User, Mail, Calendar, LogIn, AlertCircle, Layers } from "lucide-react";
+import { cn, formatCurrency } from "@/lib/utils";
 
 interface CheckInModalProps {
   isOpen: boolean;
@@ -108,167 +97,217 @@ export function CheckInModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <LogIn className="h-5 w-5 text-emerald-600" />
-            Check In Guest
+      <DialogContent className="gap-0 p-0 sm:max-w-md">
+        {/* ── Header ── */}
+        <DialogHeader className="space-y-1.5 px-6 pt-6 pb-5">
+          <DialogTitle className="text-base font-semibold tracking-tight">
+            Check in guest
           </DialogTitle>
-          <DialogDescription>
-            Register a new guest for room {room.roomNumber}
+          <DialogDescription className="text-xs text-muted-foreground">
+            Register a new guest for room {room.roomNumber}.
           </DialogDescription>
         </DialogHeader>
 
-        {/* Room info */}
-        <div className="rounded-xl bg-muted/50 border p-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 dark:bg-emerald-900 flex-shrink-0">
-              <BedDouble className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+        {/* ── Room summary strip ── */}
+        <div className="flex items-center justify-between gap-3 border-y border-border/60 bg-muted/30 px-6 py-3">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-semibold tabular-nums tracking-tight">
+                Room {room.roomNumber}
+              </span>
+              <RoomStatusBadge status={room.status} showDot />
             </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <p className="font-semibold">Room {room.roomNumber}</p>
-                <RoomStatusBadge status={room.status} />
-              </div>
-              <p className="text-sm text-muted-foreground">
-                Floor {room.floor} · {room.roomType.name}
-              </p>
-            </div>
-            <div className="text-right flex-shrink-0">
-              <div className="flex items-center gap-0.5 font-bold text-lg">
-                <DollarSign className="h-4 w-4 text-muted-foreground" />
-                {Number(room.roomType.basePrice).toFixed(0)}
-              </div>
-              <p className="text-[10px] text-muted-foreground">per night</p>
-            </div>
+            <p className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+              <span className="flex items-center gap-1">
+                <Layers className="h-3 w-3" />
+                Floor {room.floor}
+              </span>
+              <span aria-hidden className="text-border">
+                ·
+              </span>
+              <span className="truncate">{room.roomType.name}</span>
+            </p>
+          </div>
+          <div className="text-right shrink-0">
+            <p className="text-sm font-semibold tabular-nums leading-none">
+              {formatCurrency(room.roomType.basePrice)}
+            </p>
+            <p className="mt-1 text-[10px] uppercase tracking-wider text-muted-foreground">
+              per night
+            </p>
           </div>
         </div>
 
-        <Separator />
-
-        {/* Form */}
-        <div className="space-y-4">
+        {/* ── Form ── */}
+        <div className="space-y-4 px-6 py-5">
           {/* Guest Name */}
-          <div className="space-y-2">
-            <Label htmlFor="guestName">
-              Guest Name <span className="text-destructive">*</span>
-            </Label>
-            <div className="relative">
-              <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                id="guestName"
-                placeholder="Full name"
-                value={form.guestName}
-                onChange={(e) => patch("guestName", e.target.value)}
-                className={cn(
-                  "pl-9",
-                  errors.guestName &&
-                    "border-destructive focus-visible:ring-destructive",
-                )}
-              />
-            </div>
-            {errors.guestName && (
-              <p className="flex items-center gap-1.5 text-xs text-destructive">
-                <AlertCircle className="h-3.5 w-3.5" />
-                {errors.guestName}
-              </p>
-            )}
-          </div>
+          <Field
+            id="guestName"
+            label="Guest name"
+            required
+            error={errors.guestName}
+          >
+            <FieldInput
+              icon={User}
+              id="guestName"
+              placeholder="Full name"
+              value={form.guestName}
+              onChange={(e) => patch("guestName", e.target.value)}
+              hasError={!!errors.guestName}
+              autoFocus
+            />
+          </Field>
 
           {/* Guest Email */}
-          <div className="space-y-2">
-            <Label htmlFor="guestEmail">Email Address</Label>
-            <div className="relative">
-              <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                id="guestEmail"
-                type="email"
-                placeholder="guest@example.com"
-                value={form.guestEmail}
-                onChange={(e) => patch("guestEmail", e.target.value)}
-                className={cn(
-                  "pl-9",
-                  errors.guestEmail &&
-                    "border-destructive focus-visible:ring-destructive",
-                )}
-              />
-            </div>
-            {errors.guestEmail && (
-              <p className="flex items-center gap-1.5 text-xs text-destructive">
-                <AlertCircle className="h-3.5 w-3.5" />
-                {errors.guestEmail}
-              </p>
-            )}
-          </div>
+          <Field
+            id="guestEmail"
+            label="Email address"
+            error={errors.guestEmail}
+          >
+            <FieldInput
+              icon={Mail}
+              id="guestEmail"
+              type="email"
+              placeholder="guest@example.com"
+              value={form.guestEmail}
+              onChange={(e) => patch("guestEmail", e.target.value)}
+              hasError={!!errors.guestEmail}
+            />
+          </Field>
 
           {/* Check-in Date */}
-          <div className="space-y-2">
-            <Label htmlFor="checkIn">
-              Check-in Date <span className="text-destructive">*</span>
-            </Label>
-            <div className="relative">
-              <Calendar className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                id="checkIn"
-                type="date"
-                value={form.checkIn}
-                onChange={(e) => patch("checkIn", e.target.value)}
-                className={cn(
-                  "pl-9",
-                  errors.checkIn &&
-                    "border-destructive focus-visible:ring-destructive",
-                )}
-              />
-            </div>
-            {errors.checkIn && (
-              <p className="flex items-center gap-1.5 text-xs text-destructive">
-                <AlertCircle className="h-3.5 w-3.5" />
-                {errors.checkIn}
-              </p>
-            )}
-          </div>
+          <Field
+            id="checkIn"
+            label="Check-in date"
+            required
+            error={errors.checkIn}
+          >
+            <FieldInput
+              icon={Calendar}
+              id="checkIn"
+              type="date"
+              value={form.checkIn}
+              onChange={(e) => patch("checkIn", e.target.value)}
+              hasError={!!errors.checkIn}
+            />
+          </Field>
 
           {/* Notes */}
-          <div className="space-y-2">
-            <Label htmlFor="notes">Notes</Label>
+          <div className="space-y-1.5">
+            <div className="flex items-baseline justify-between">
+              <Label htmlFor="notes" className="text-xs font-medium">
+                Notes
+              </Label>
+              <span className="text-[10px] text-muted-foreground">
+                Optional
+              </span>
+            </div>
             <Textarea
               id="notes"
-              placeholder="Special requests, preferences..."
+              placeholder="Special requests, preferences…"
               value={form.notes}
               onChange={(e) => patch("notes", e.target.value)}
-              rows={2}
-              className="resize-none"
+              rows={3}
+              className="resize-none text-sm"
             />
           </div>
         </div>
 
-        <DialogFooter className="gap-2 sm:gap-0">
+        {/* ── Footer ── */}
+        <DialogFooter className="gap-2 border-t border-border/60 bg-muted/20 px-6 py-4 sm:gap-2">
           <Button
-            variant="outline"
+            variant="ghost"
+            size="sm"
             onClick={() => handleOpenChange(false)}
             disabled={isLoading}
           >
             Cancel
           </Button>
           <Button
+            size="sm"
             onClick={handleSubmit}
             disabled={isLoading}
-            className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white"
+            className="gap-1.5"
           >
             {isLoading ? (
               <>
-                <span className="h-4 w-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
-                Checking In...
+                <span className="h-3.5 w-3.5 rounded-full border-2 border-current/30 border-t-current animate-spin" />
+                Checking in…
               </>
             ) : (
               <>
-                <LogIn className="h-4 w-4" />
-                Confirm Check In
+                <LogIn className="h-3.5 w-3.5" />
+                Confirm check in
               </>
             )}
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+/* ──────────────────────────────────────────────────────────── */
+/*  Small internal helpers — keep markup DRY and consistent     */
+/* ──────────────────────────────────────────────────────────── */
+
+interface FieldProps {
+  id: string;
+  label: string;
+  required?: boolean;
+  error?: string;
+  children: React.ReactNode;
+}
+
+function Field({ id, label, required, error, children }: FieldProps) {
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-baseline justify-between">
+        <Label htmlFor={id} className="text-xs font-medium">
+          {label}
+          {required && (
+            <span className="ml-0.5 text-destructive" aria-hidden>
+              *
+            </span>
+          )}
+        </Label>
+        {!required && (
+          <span className="text-[10px] text-muted-foreground">Optional</span>
+        )}
+      </div>
+      {children}
+      {error && (
+        <p className="flex items-center gap-1 text-[11px] text-destructive">
+          <AlertCircle className="h-3 w-3 shrink-0" />
+          {error}
+        </p>
+      )}
+    </div>
+  );
+}
+
+interface FieldInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+  icon: React.ComponentType<{ className?: string }>;
+  hasError?: boolean;
+}
+
+function FieldInput({
+  icon: Icon,
+  hasError,
+  className,
+  ...props
+}: FieldInputProps) {
+  return (
+    <div className="relative">
+      <Icon className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+      <Input
+        {...props}
+        className={cn(
+          "h-9 pl-9 text-sm",
+          hasError && "border-destructive focus-visible:ring-destructive/30",
+          className,
+        )}
+      />
+    </div>
   );
 }

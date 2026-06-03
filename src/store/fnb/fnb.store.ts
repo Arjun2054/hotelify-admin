@@ -1,20 +1,23 @@
-// frontend/src/features/fnb/store/fnb.store.ts
-
 import {
   categoryApi,
   dietaryTagApi,
   fnbServiceApi,
+  kitchenApi,
   menuApi,
   menuItemApi,
+  orderApi,
   sectionApi,
   type OrgFnbServiceEntry,
 } from "@/services/fnb/fnbService";
 import type {
+  Analytics,
   DietaryTag,
+  KitchenTicket,
   Menu,
   MenuCategory,
   MenuItem,
   MenuSection,
+  Order,
   PaginatedResponse,
 } from "@/types/fnb.types";
 import { create } from "zustand";
@@ -41,6 +44,23 @@ interface FnbState {
 
   // Sections
   sections: MenuSection[];
+
+  // Orders
+  orders: Order[];
+  activeOrder: Order | null;
+  totalOrders: number;
+  isOrderLoading: boolean;
+  orderFilters: Record<string, unknown>;
+
+  //Kitchen
+  kitchenTickets: KitchenTicket[];
+  recentlyCompleted: KitchenTicket[];
+  stations: unknown[];
+  isKitchenLoading: boolean;
+  selectedStationId: string | null;
+
+  //analytics
+  analytics: Analytics | null;
 
   // UI State
   isLoading: boolean;
@@ -152,6 +172,30 @@ interface FnbActions {
   updateDietaryTag: (tagId: string, data: Partial<DietaryTag>) => Promise<void>;
   deleteDietaryTag: (tagId: string) => Promise<void>;
 
+  // Orders
+  setOrderFilters: (filters: Record<string, unknown>) => void;
+  fetchOrders: () => Promise<void>;
+  fetchOrderById: (id: string) => Promise<void>;
+  updateOrderStatus: (
+    id: string,
+    status: string,
+    reason?: string,
+  ) => Promise<void>;
+  sendToKitchen: (id: string) => Promise<void>;
+  processPayment: (id: string, data: unknown) => Promise<void>;
+  cancelOrder: (id: string, reason: string) => Promise<void>;
+
+  //Kitchen
+
+  setSelectedStation: (stationId: string | null) => void;
+  fetchKDSDashboard: () => Promise<void>;
+  updateTicketStatus: (id: string, status: string) => Promise<void>;
+  updateTicketItemStatus: (id: string, status: string) => Promise<void>;
+
+  // Analytics
+
+  fetchAnalytics: (params?: Record<string, unknown>) => Promise<void>;
+
   // Utils
   setError: (error: string | null) => void;
   reset: () => void;
@@ -165,6 +209,17 @@ const initialState: FnbState = {
   menus: null,
   currentMenu: null,
   items: null,
+  activeOrder: null,
+  orders: [],
+  totalOrders: 0,
+  orderFilters: {},
+  isOrderLoading: false,
+  kitchenTickets: [],
+  recentlyCompleted: [],
+  stations: [],
+  isKitchenLoading: false,
+  selectedStationId: null,
+  analytics: null,
   currentItem: null,
   categories: [],
   dietaryTags: [],
@@ -184,19 +239,6 @@ const initialState: FnbState = {
   },
   menuFilters: { search: "", status: "", page: 1, limit: 20 },
 };
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-/**
- * Normalises the items API response regardless of whether the backend wraps
- * the PaginatedResponse in an extra { data: … } envelope or not.
- *
- * Shape A (double-nested):  { data: { data: MenuItem[], pagination: {} } }
- * Shape B (single-nested):  { data: MenuItem[], pagination: {} }
- *
- * Both are handled correctly so we never end up setting `items` to a raw
- * array, which would make `items?.data` undefined in the component.
- */
 function normalisePaginatedResponse<T>(
   raw: unknown,
 ): PaginatedResponse<T> | null {
@@ -719,6 +761,91 @@ export const useFnbStore = create<FnbState & FnbActions>()(
           set({ isSubmitting: false });
         }
       },
+
+      // ------------- Orders
+      setOrderFilters: (filters) => set({ orderFilters: filters }),
+      fetchOrders: async () => {
+        const { orderFilters } = get();
+
+        set({ isOrderLoading: true });
+        try {
+          const res = await orderApi.getOrders(orderFilters);
+          set({
+            orders: res.data.data,
+            totalOrders: res.data.pagination?.total ?? 0,
+          });
+        } finally {
+          set({ isOrderLoading: false });
+        }
+      },
+
+      fetchOrderById: async (id) => {
+        const res = await orderApi.getOrder(id);
+        set({ activeOrder: res.data.data });
+      },
+
+      updateOrderStatus: async (id, status, reason) => {
+        const { fetchOrders } = get();
+        await orderApi.updateOrderStatus(id, {
+          status,
+          reason,
+        });
+        await fetchOrders();
+      },
+
+      sendToKitchen: async (id) => {
+        const { fetchOrders } = get();
+        await orderApi.sendToKitchen(id);
+        await fetchOrders();
+      },
+
+      processPayment: async (id, data) => {
+        const { fetchOrders } = get();
+        await orderApi.processPayment(id, data);
+        await fetchOrders();
+      },
+      cancelOrder: async (id, reason) => {
+        const { fetchOrders } = get();
+
+        await orderApi.cancelOrder(id, reason);
+        await fetchOrders();
+      },
+
+      //------kitchen
+      setSelectedStation: (stationId) => set({ selectedStationId: stationId }),
+
+      fetchKDSDashboard: async () => {
+        const { selectedStationId } = get();
+        set({ isKitchenLoading: true });
+        try {
+          const res = await kitchenApi.getKDSDashboard(
+            selectedStationId ?? undefined,
+          );
+          set({
+            kitchenTickets: res.data.data.activeTickets,
+            recentlyCompleted: res.data.data.recentlyCompleted,
+            stations: res.data.data.stations,
+          });
+        } finally {
+          set({ isKitchenLoading: false });
+        }
+      },
+
+      updateTicketStatus: async (id, status) => {
+        const { fetchKDSDashboard } = get();
+
+        await kitchenApi.updateTicketStatus(id, { status });
+        await fetchKDSDashboard();
+      },
+
+      updateTicketItemStatus: async (id, status) => {
+        const { fetchKDSDashboard } = get();
+
+        await kitchenApi.updateTicketItemStatus(id, { status });
+        await fetchKDSDashboard();
+      },
+
+      // ── Analytics ────────────────────────────────────────────────────────────
 
       setError: (error) => set({ error }),
       reset: () => set(initialState),

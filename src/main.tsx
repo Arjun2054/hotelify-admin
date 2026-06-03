@@ -48,6 +48,8 @@ const RoomDashboardPage = lazy(
   () => import("./components/room/DashboardPage.tsx"),
 );
 
+const FnbOverviewPage = lazy(() => import("./pages/FnbOverviewPage.tsx"));
+
 const FnbPage = lazy(() => import("./pages/FnbPage.tsx"));
 
 const MenuPage = lazy(() => import("./pages/MenusPage.tsx"));
@@ -55,6 +57,10 @@ const MenuPage = lazy(() => import("./pages/MenusPage.tsx"));
 const FnbSettingsPage = lazy(() => import("./pages/FnbSettingsPage.tsx"));
 
 const MenuDetailPage = lazy(() => import("./pages/MenuDetailPage.tsx"));
+
+const OrdersPage = lazy(() => import("./pages/OrdersPage.tsx"));
+
+const KitchenDisplayPage = lazy(() => import("./pages/KitchenDisplayPage.tsx"));
 
 const HotelAnalyticsPage = lazy(() => import("./pages/HotelAnalytics.tsx"));
 
@@ -214,6 +220,14 @@ const router = createBrowserRouter([
         path: "/fnb",
         element: (
           <DepartmentGuard allowedDepartments={["FRONT_DESK", "KITCHEN"]}>
+            <FnbOverviewPage />
+          </DepartmentGuard>
+        ),
+      },
+      {
+        path: "/fnb/services",
+        element: (
+          <DepartmentGuard allowedDepartments={["FRONT_DESK", "KITCHEN"]}>
             <FnbPage />
           </DepartmentGuard>
         ),
@@ -239,6 +253,24 @@ const router = createBrowserRouter([
         element: (
           <DepartmentGuard allowedDepartments={["FRONT_DESK", "KITCHEN"]}>
             <FnbSettingsPage />
+          </DepartmentGuard>
+        ),
+      },
+
+      {
+        path: "/fnb/orders",
+        element: (
+          <DepartmentGuard allowedDepartments={["FRONT_DESK", "KITCHEN"]}>
+            <OrdersPage />
+          </DepartmentGuard>
+        ),
+      },
+
+      {
+        path: "/fnb/kitchen",
+        element: (
+          <DepartmentGuard allowedDepartments={["KITCHEN"]}>
+            <KitchenDisplayPage />
           </DepartmentGuard>
         ),
       },

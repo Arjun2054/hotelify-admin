@@ -419,7 +419,7 @@ function TaskRow({
             }`}
           >
             <BedDouble
-              className={`w-4 h-4 ${overdue ? "text-red-500" : "text-blue-600"}`}
+              className={`w-4 h-4 ${overdue ? "text-red-500" : "text-black"}`}
             />
           </div>
           <div>
@@ -442,7 +442,7 @@ function TaskRow({
                 {task.user.name.charAt(0).toUpperCase()}
               </span>
             </div>
-            <span className="text-sm text-gray-700 truncate max-w-[120px]">
+            <span className="text-sm text-gray-700 truncate max-w-30">
               {task.user.name}
             </span>
           </div>

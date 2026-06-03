@@ -1,5 +1,3 @@
-// frontend/src/features/fnb/services/fnb.api.ts
-
 import adminApi from "@/lib/config";
 import type {
   DietaryTag,
@@ -36,6 +34,8 @@ export interface OrgFnbServiceEntry {
 }
 
 const base = "/fnb";
+const orders = "/orders";
+const kitchen1 = "/kitchen";
 
 // ─── Module ──────────────────────────────────────────────────────────────────
 
@@ -300,6 +300,80 @@ export const dietaryTagApi = {
 
   delete: (tagId: string) =>
     adminApi.delete(`${base}/dietary-tags/${tagId}`, {
+      headers: fnbServiceApi.getHeaders(),
+    }),
+};
+// ---------- Order API ------------
+export const orderApi = {
+  getOrders: (params?: Record<string, unknown>) =>
+    adminApi.get(`${orders}/orders`, {
+      params,
+      headers: fnbServiceApi.getHeaders(),
+    }),
+
+  getOrder: (id: string) =>
+    adminApi.get(`${orders}/orders/${id}`, {
+      headers: fnbServiceApi.getHeaders(),
+    }),
+
+  createOrder: (data: unknown) =>
+    adminApi.post(`${orders}/orders/create`, data, {
+      headers: fnbServiceApi.getHeaders(),
+    }),
+
+  updateOrderStatus: (id: string, data: unknown) =>
+    adminApi.patch(`${orders}/orders/${id}/status`, data, {
+      headers: fnbServiceApi.getHeaders(),
+    }),
+
+  sendToKitchen: (id: string) =>
+    adminApi.post(`${orders}/orders/${id}/send-to-kitchen`, {
+      headers: fnbServiceApi.getHeaders(),
+    }),
+  processPayment: (id: string, data: unknown) =>
+    adminApi.post(`${orders}/orders/${id}/payment`, data, {
+      headers: fnbServiceApi.getHeaders(),
+    }),
+  cancelOrder: (id: string, reason: string) =>
+    adminApi.post(`${orders}/orders/${id}/cancel`, {
+      reason,
+      headers: fnbServiceApi.getHeaders(),
+    }),
+
+  getAnalytics: (params?: Record<string, unknown>) =>
+    adminApi.get(`/${orders}/orders/analytics`, {
+      params,
+      headers: fnbServiceApi.getHeaders(),
+    }),
+};
+
+// -----------------Kitchen API ------------------
+export const kitchenApi = {
+  getKDSDashboard: (stationId?: string) =>
+    adminApi.get(`${kitchen1}/kitchen/dashboard`, {
+      params: { stationId },
+      headers: fnbServiceApi.getHeaders(),
+    }),
+  getTickets: (params?: Record<string, unknown>) =>
+    adminApi.get(`${kitchen1}/kitchen/tickets`, {
+      params,
+      headers: fnbServiceApi.getHeaders(),
+    }),
+
+  updateTicketStatus: (id: string, data: unknown) =>
+    adminApi.patch(`${kitchen1}/kitchen/tickets/${id}/status`, data, {
+      headers: fnbServiceApi.getHeaders(),
+    }),
+  updateTicketItemStatus: (id: string, data: unknown) =>
+    adminApi.patch(`${kitchen1}/kitchen/tickets/items/${id}/status`, data, {
+      headers: fnbServiceApi.getHeaders(),
+    }),
+  getStations: () =>
+    adminApi.get(`${kitchen1}/kitchen/stations`, {
+      headers: fnbServiceApi.getHeaders(),
+    }),
+  createStation: (data: unknown) =>
+    adminApi.post(`${kitchen1}/kitchen/stations`, data, {
       headers: fnbServiceApi.getHeaders(),
     }),
 };

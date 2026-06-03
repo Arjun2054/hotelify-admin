@@ -168,6 +168,8 @@ export interface MenuCategory {
   _count?: { menuItems: number };
 }
 
+/// ----- DietaryTag -----------------------------------------
+
 export interface DietaryTag {
   id: string;
   name: string;
@@ -180,6 +182,8 @@ export interface DietaryTag {
   isSystem: boolean;
   _count?: { menuItems: number };
 }
+
+/// ----- MenuItem -----------------------------------------
 
 export interface MenuItem {
   id: string;
@@ -204,6 +208,68 @@ export interface MenuItem {
   dietaryTags?: { dietaryTag: DietaryTag }[];
   createdAt: string;
   updatedAt: string;
+}
+
+/// ----- Order ---------------------------------------------
+
+export interface Order {
+  id: string;
+  orderNumber: string;
+  status: string;
+  paymentStatus: string;
+  type: string;
+  totalAmount: number;
+  customerName?: string;
+  table?: { tableNumber: string };
+  items: OrderItem[];
+  orderedAt: string;
+  estimatedReadyAt?: string;
+}
+
+interface OrderItem {
+  id: string;
+  itemName: string;
+  quantity: number;
+  unitPrice: number;
+  totalPrice: number;
+  status: string;
+  specialInstructions?: string;
+}
+
+// ------------ Kitchen Orders ----------------------------
+
+export interface KitchenTicket {
+  id: string;
+  ticketNumber: string;
+  status: string;
+  priority: string;
+  receivedAt: string;
+  order: {
+    orderNumber: string;
+    table?: { tableNumber: string };
+    type: string;
+  };
+  items: {
+    id: string;
+    quantity: number;
+    status: string;
+    orderItem: {
+      itemName: string;
+      specialInstructions?: string;
+      menuItem: { name: string; preparationTime?: number };
+    };
+  }[];
+  kitchenStation?: { name: string; displayColor?: string };
+}
+
+export interface Analytics {
+  totalOrders: number;
+  completedOrders: number;
+  cancelledOrders: number;
+  totalRevenue: number;
+  avgOrderValue: number;
+  ordersByType: { type: string; _count: number }[];
+  ordersByStatus: { status: string; _count: number }[];
 }
 
 export interface PaginatedResponse<T> {

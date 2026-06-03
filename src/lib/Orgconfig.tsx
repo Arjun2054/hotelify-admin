@@ -52,13 +52,13 @@ export const ORG_CONFIGS: Record<OrganizationType, OrgConfig> = {
   HOTEL: {
     type: "HOTEL",
     label: "Hotel / Resort",
-    description: "Room management, bookings, housekeeping & amenities",
+    description: "Room management, bookings, housekeeping & f&B management",
     icon: Hotel,
     color: "text-amber-600",
     bgColor: "bg-amber-50",
     accentColor: "bg-amber-600",
     templateDescription:
-      "Manage rooms, reservations, guest check-ins, and hotel supplies",
+      "Manage rooms, reservations, guest check-ins, and hotel supplies and services.",
     features: ["rooms", "bookings", "amenities", "housekeeping", "inventory"],
     navItems: [
       {
@@ -85,7 +85,7 @@ export const ORG_CONFIGS: Record<OrganizationType, OrgConfig> = {
         href: "/fnb",
         icon: Utensils,
         roles: ["OWNER", "ADMIN", "STAFF"],
-        departments: ["KITCHEN", "FRONT_DESK"],
+        departments: ["FRONT_DESK", "KITCHEN"],
         requiredModule: "HOTEL_FNB",
         children: [
           {
@@ -93,11 +93,26 @@ export const ORG_CONFIGS: Record<OrganizationType, OrgConfig> = {
             href: "/fnb",
             icon: LayoutDashboard,
           },
+          {
+            label: "Services",
+            href: "/fnb/services",
+            icon: Utensils,
+          },
           { label: "Menus", href: "/fnb/menus", icon: Package },
           {
             label: "Category and Dietary ",
             href: "/fnb/settings",
             icon: Settings,
+          },
+          {
+            label: "Orders",
+            href: "/fnb/orders",
+            icon: ShoppingBag,
+          },
+          {
+            label: "Kitchen",
+            href: "/fnb/kitchen",
+            icon: BarChart3,
           },
         ],
       },
@@ -125,6 +140,7 @@ export const ORG_CONFIGS: Record<OrganizationType, OrgConfig> = {
           },
         ],
       },
+
       {
         label: "Housekeeping",
         href: "/housekeeping/tasks",
@@ -143,29 +159,27 @@ export const ORG_CONFIGS: Record<OrganizationType, OrgConfig> = {
         roles: ["OWNER", "ADMIN", "STAFF"],
         // HR is visible if ANY HR module is enabled
         // (we handle this with a special "anyModule" below)
-        requiredModule: "HR_LEAVE",
+        requiredModule: "HR",
         children: [
           { label: "Overview", href: "/hr/dashboard", icon: LayoutDashboard },
           {
             label: "Leave",
             href: "/hr/leave",
             icon: CalendarRange,
-            requiredModule: "HR_LEAVE",
           } as NavItem,
           {
             label: "Attendance",
             href: "/hr/attendance",
             icon: Clock,
-            requiredModule: "HR_ATTENDANCE",
           } as NavItem,
           {
             label: "Payslips",
             href: "/hr/payslips",
             icon: FileText,
-            requiredModule: "HR_PAYROLL",
           } as NavItem,
         ],
       },
+
       {
         label: "Notifications",
         href: "/notifications",

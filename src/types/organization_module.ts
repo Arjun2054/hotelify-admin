@@ -11,6 +11,7 @@ export type ModuleType =
   | "HOTEL_ROOMS"
   | "HOTEL_HOUSEKEEPING"
   | "HOTEL_INVENTORY"
+  | "HR"
   | "HR_LEAVE"
   | "HR_ATTENDANCE"
   | "HR_PAYROLL"

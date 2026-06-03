@@ -1,5 +1,3 @@
-// app/hotel/analytics/page.tsx
-"use client";
 import { useEffect } from "react";
 import { AlertCircle, BarChart3, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";

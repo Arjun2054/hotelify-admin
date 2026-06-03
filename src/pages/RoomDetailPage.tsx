@@ -9,7 +9,6 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -43,18 +42,22 @@ import {
   Clock,
   Calendar,
   X,
-  DollarSign,
   Hash,
-  Wrench,
   History,
   MoreVertical,
   Building2,
   Shield,
   TrendingUp,
   Star,
-  AlertTriangle,
-  Sparkles,
   CheckCircle2,
+  Sparkles,
+  Wrench,
+  AlertTriangle,
+  Users,
+  MapPin,
+  Mail,
+  CalendarDays,
+  Moon,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -63,7 +66,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { cn } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
 import { toast } from "sonner";
 import { useRoomStore } from "@/store/room/useRoomStore";
 import { useHotelItemStore } from "@/store/hotel/useHotelItemStore";
@@ -77,54 +80,46 @@ import { CheckInModal } from "@/components/room/updates/CheckInModal";
 import { RoomStatusBadge } from "@/components/room/RoomStatusBadge";
 import { useAuthStore } from "@/store/useAuthStore";
 
-/* ─── Status config ─────────────────────────────────────────── */
-const STATUS_CONFIG = {
+/* ─── Status palette ─────────────────────────────────────────── */
+const STATUS_THEME = {
   AVAILABLE: {
-    gradient: "from-emerald-500 to-teal-500",
-    softBg: "bg-emerald-50 dark:bg-emerald-950/40",
-    iconBg:
-      "bg-emerald-100 dark:bg-emerald-900/60 text-emerald-600 dark:text-emerald-400",
-    ring: "ring-emerald-200 dark:ring-emerald-800",
-    text: "text-emerald-700 dark:text-emerald-300",
-    Icon: Sparkles,
+    gradient: "from-emerald-500/90 via-teal-500/80 to-emerald-600/90",
+    glow: "shadow-emerald-500/20",
+    icon: Sparkles,
+    tint: "text-emerald-50",
+    dot: "bg-emerald-500",
   },
   OCCUPIED: {
-    gradient: "from-blue-500 to-indigo-500",
-    softBg: "bg-blue-50 dark:bg-blue-950/40",
-    iconBg: "bg-blue-100 dark:bg-blue-900/60 text-blue-600 dark:text-blue-400",
-    ring: "ring-blue-200 dark:ring-blue-800",
-    text: "text-blue-700 dark:text-blue-300",
-    Icon: User,
+    gradient: "from-blue-600/90 via-indigo-600/85 to-blue-700/90",
+    glow: "shadow-blue-500/20",
+    icon: User,
+    tint: "text-blue-50",
+    dot: "bg-blue-500",
   },
   CLEANING: {
-    gradient: "from-amber-500 to-yellow-400",
-    softBg: "bg-amber-50 dark:bg-amber-950/40",
-    iconBg:
-      "bg-amber-100 dark:bg-amber-900/60 text-amber-600 dark:text-amber-400",
-    ring: "ring-amber-200 dark:ring-amber-800",
-    text: "text-amber-700 dark:text-amber-300",
-    Icon: Sparkles,
+    gradient: "from-amber-500/90 via-yellow-500/80 to-orange-500/90",
+    glow: "shadow-amber-500/20",
+    icon: Sparkles,
+    tint: "text-amber-50",
+    dot: "bg-amber-500",
   },
   MAINTENANCE: {
-    gradient: "from-orange-500 to-red-400",
-    softBg: "bg-orange-50 dark:bg-orange-950/40",
-    iconBg:
-      "bg-orange-100 dark:bg-orange-900/60 text-orange-600 dark:text-orange-400",
-    ring: "ring-orange-200 dark:ring-orange-800",
-    text: "text-orange-700 dark:text-orange-300",
-    Icon: Wrench,
+    gradient: "from-orange-500/90 via-red-500/80 to-orange-600/90",
+    glow: "shadow-orange-500/20",
+    icon: Wrench,
+    tint: "text-orange-50",
+    dot: "bg-orange-500",
   },
   OUT_OF_ORDER: {
-    gradient: "from-red-500 to-rose-500",
-    softBg: "bg-red-50 dark:bg-red-950/40",
-    iconBg: "bg-red-100 dark:bg-red-900/60 text-red-600 dark:text-red-400",
-    ring: "ring-red-200 dark:ring-red-800",
-    text: "text-red-700 dark:text-red-300",
-    Icon: AlertTriangle,
+    gradient: "from-red-600/90 via-rose-600/85 to-red-700/90",
+    glow: "shadow-red-500/20",
+    icon: AlertTriangle,
+    tint: "text-red-50",
+    dot: "bg-red-500",
   },
 } as const;
 
-/* ─── Small reusable detail row ─────────────────────────────── */
+/* ─── Detail row used in spec tables ──────────────────────────── */
 function DetailRow({
   icon: Icon,
   label,
@@ -135,52 +130,83 @@ function DetailRow({
   value: React.ReactNode;
 }) {
   return (
-    <div className="flex items-center justify-between py-2.5">
+    <div className="flex items-center justify-between gap-4 py-2.5">
       <span className="flex items-center gap-2 text-xs text-muted-foreground">
         <Icon className="h-3.5 w-3.5 shrink-0" />
         {label}
       </span>
-      <span className="text-xs font-semibold text-foreground">{value}</span>
+      <span className="text-right text-xs font-medium text-foreground">
+        {value}
+      </span>
     </div>
   );
 }
 
-/* ─── Stat card ─────────────────────────────────────────────── */
-function StatCard({
-  label,
-  value,
-  sub,
-  icon: Icon,
-  color,
+/* ─── Sidebar section card ────────────────────────────────────── */
+function SidebarCard({
+  title,
+  action,
+  children,
+  className,
 }: {
-  label: string;
-  value: React.ReactNode;
-  sub?: string;
-  icon: React.ElementType;
-  color: string;
+  title?: string;
+  action?: React.ReactNode;
+  children: React.ReactNode;
+  className?: string;
 }) {
   return (
-    <div className="rounded-xl border border-border/60 bg-card p-4 flex items-start gap-3">
-      <div
-        className={cn(
-          "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl",
-          color,
-        )}
-      >
-        <Icon className="h-4 w-4" />
-      </div>
-      <div className="min-w-0">
-        <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">
-          {label}
-        </p>
-        <p className="mt-0.5 text-sm font-bold text-foreground leading-none">
-          {value}
-        </p>
-        {sub && (
-          <p className="mt-0.5 text-[11px] text-muted-foreground">{sub}</p>
-        )}
-      </div>
+    <div
+      className={cn(
+        "rounded-lg border border-border/60 bg-card overflow-hidden",
+        className,
+      )}
+    >
+      {title && (
+        <div className="flex items-center justify-between gap-2 border-b border-border/60 bg-muted/30 px-4 py-2.5">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+            {title}
+          </p>
+          {action}
+        </div>
+      )}
+      <div className="p-4">{children}</div>
     </div>
+  );
+}
+
+/* ─── Main content section card ───────────────────────────────── */
+function SectionCard({
+  title,
+  description,
+  action,
+  children,
+  bodyClassName,
+}: {
+  title: string;
+  description?: string;
+  action?: React.ReactNode;
+  children: React.ReactNode;
+  bodyClassName?: string;
+}) {
+  return (
+    <Card className="border-border/60 shadow-none">
+      <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0 px-5 pt-4 pb-3">
+        <div className="min-w-0">
+          <CardTitle className="text-sm font-semibold tracking-tight">
+            {title}
+          </CardTitle>
+          {description && (
+            <CardDescription className="mt-0.5 text-xs">
+              {description}
+            </CardDescription>
+          )}
+        </div>
+        {action}
+      </CardHeader>
+      <CardContent className={cn("px-5 pb-4", bodyClassName)}>
+        {children}
+      </CardContent>
+    </Card>
   );
 }
 
@@ -239,10 +265,12 @@ export default function RoomDetailPage() {
       fetchRoomTypes();
       fetchItems();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   useEffect(() => {
     if (id && activeTab === "history") fetchHistory(id, historyPage);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, activeTab, historyPage]);
 
   /* handlers */
@@ -302,10 +330,11 @@ export default function RoomDetailPage() {
           action={
             <Button
               variant="outline"
+              size="sm"
               onClick={() => navigate("/hotel/rooms")}
-              className="gap-2"
+              className="gap-1.5"
             >
-              <ArrowLeft className="h-4 w-4" /> Back to Rooms
+              <ArrowLeft className="h-3.5 w-3.5" /> Back to rooms
             </Button>
           }
         />
@@ -315,769 +344,779 @@ export default function RoomDetailPage() {
   const room = selectedRoom as any;
   const existingItemIds =
     room.roomItems?.map((ri: any) => ri.hotelItemId) ?? [];
-  const cfg = STATUS_CONFIG[room.status as keyof typeof STATUS_CONFIG];
-  const StatusIcon = cfg.Icon;
+  const theme =
+    STATUS_THEME[room.status as keyof typeof STATUS_THEME] ??
+    STATUS_THEME.AVAILABLE;
+  const StatusIcon = theme.icon;
 
   if (!activeOrg)
     return (
-      <div className="flex min-h-screen items-center justify-center p-6">
-        <div className="max-w-sm w-full rounded-2xl border bg-card p-10 text-center space-y-4">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-yellow-100 dark:bg-yellow-900/30">
-            <Building2 className="h-7 w-7 text-yellow-600" />
-          </div>
-          <h2 className="text-base font-bold">No Organization Selected</h2>
-          <p className="text-xs text-muted-foreground">
-            Please select an organization to continue.
-          </p>
-        </div>
-      </div>
+      <GuardScreen
+        icon={Building2}
+        title="No organization selected"
+        description="Please select an organization to continue."
+      />
     );
 
   if (!hasAccess)
     return (
-      <div className="flex min-h-screen items-center justify-center p-6">
-        <div className="max-w-sm w-full rounded-2xl border bg-card p-10 text-center space-y-4">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-red-100 dark:bg-red-900/30">
-            <Shield className="h-7 w-7 text-red-500" />
-          </div>
-          <h2 className="text-base font-bold">Access Restricted</h2>
-          <p className="text-xs text-muted-foreground leading-relaxed">
+      <GuardScreen
+        icon={Shield}
+        title="Access restricted"
+        description={
+          <>
             You don't have access to this section.
             {isStaff && department && (
               <>
                 {" "}
                 Your department is{" "}
-                <span className="font-semibold text-foreground">
+                <span className="font-medium text-foreground">
                   {department}
                 </span>
                 . Only Front Desk staff can access this.
               </>
             )}
-          </p>
-        </div>
-      </div>
+          </>
+        }
+      />
     );
+
+  /* ─── Stay duration for current guest ─────────────────────────── */
+  const stayNights = room.currentGuest
+    ? Math.max(
+        1,
+        Math.ceil(
+          (Date.now() - new Date(room.currentGuest.checkIn).getTime()) /
+            86_400_000,
+        ),
+      )
+    : 0;
 
   /* ─── Render ──────────────────────────────────────────────── */
   return (
     <div className="min-h-screen bg-muted/20 dark:bg-background">
-      {/* ── Hero / Header strip ── */}
-      <div className="relative overflow-hidden bg-card border-b border-border/60">
-        {/* gradient bar */}
+      {/* ── PREMIUM HERO ── */}
+      <header className="relative overflow-hidden border-b border-border/60 bg-card">
+        {/* Color wash backdrop */}
         <div
+          aria-hidden
           className={cn(
-            "absolute inset-x-0 top-0 h-[3px] bg-linear-to-r",
-            cfg.gradient,
+            "absolute inset-x-0 top-0 h-64 bg-linear-to-r from-primary via-primary/90 to-primary/75 opacity-95",
           )}
         />
+        {/* Decorative pattern overlay */}
+        <div className="pointer-events-none absolute -top-10 -right-10 h-48 w-48 rounded-full bg-white/5" />
+        <div className="pointer-events-none absolute -bottom-8 right-24 h-32 w-32 rounded-full bg-white/5" />
+        <div className="pointer-events-none absolute top-4 right-64 h-16 w-16 rounded-full bg-white/5" />
 
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 pt-5 pb-6 space-y-5">
-          {/* Back */}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => navigate("/room")}
-            className="-ml-2 gap-1.5 text-xs text-muted-foreground hover:text-foreground"
-          >
-            <ArrowLeft className="h-3.5 w-3.5" />
-            Back to Rooms
-          </Button>
+        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 pt-5 pb-6">
+          {/* Back + breadcrumb */}
+          <div className="flex items-center justify-between">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate("/room")}
+              className="-ml-2 h-7 gap-1 text-xs text-white/80 hover:bg-white/10 hover:text-white"
+            >
+              <ArrowLeft className="h-3.5 w-3.5" />
+              Back to rooms
+            </Button>
 
-          {/* Identity + actions */}
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-            {/* Left */}
-            <div className="flex items-start gap-4">
-              {/* status icon */}
+            <nav
+              aria-label="Breadcrumb"
+              className="hidden items-center gap-1.5 text-[11px] font-medium uppercase tracking-wider text-white/70 sm:flex"
+            >
+              <span>Hotel</span>
+              <span aria-hidden>/</span>
+              <span>Rooms</span>
+              <span aria-hidden>/</span>
+              <span className="text-white tabular-nums">{room.roomNumber}</span>
+            </nav>
+          </div>
+
+          {/* Identity row */}
+          <div className="mt-6 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+            <div className="flex items-end gap-5">
+              {/* Big visual: room number + icon */}
               <div
                 className={cn(
-                  "flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl ring-1",
-                  cfg.iconBg,
-                  cfg.ring,
+                  "relative flex h-28 w-28 shrink-0 items-center justify-center rounded-2xl bg-white/10 ring-1 ring-white/20 backdrop-blur-sm shadow-2xl",
                 )}
               >
-                <StatusIcon className="h-6 w-6" />
+                <span
+                  aria-hidden
+                  className="absolute -top-2 -right-2 flex h-8 w-8 items-center justify-center rounded-full bg-white text-foreground ring-4 ring-white/30 shadow-lg"
+                >
+                  <StatusIcon className="h-4 w-4" />
+                </span>
+                <BedDouble className="absolute top-3 left-3 h-5 w-5 text-white/40" />
+                <span className="text-5xl font-bold tabular-nums tracking-tight text-white drop-shadow-sm">
+                  {room.roomNumber}
+                </span>
               </div>
 
-              <div>
+              {/* Title block */}
+              <div className="min-w-0 pb-1">
                 <div className="flex flex-wrap items-center gap-2">
-                  <h1 className="text-xl font-bold tracking-tight">
-                    Room {room.roomNumber}
-                  </h1>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/70">
+                    {room.roomType.name}
+                  </p>
+                  <span
+                    aria-hidden
+                    className="h-1 w-1 rounded-full bg-white/40"
+                  />
+                  <p className="flex items-center gap-1 text-[11px] font-medium text-white/70">
+                    <MapPin className="h-3 w-3" />
+                    Floor {room.floor}
+                  </p>
+                </div>
+                <h1 className="mt-1 text-2xl font-bold tracking-tight text-white">
+                  Room {room.roomNumber}
+                </h1>
+                <div className="mt-2 flex flex-wrap items-center gap-1.5">
                   <RoomStatusBadge status={room.status} showDot />
+                  {room.viewType && (
+                    <Badge
+                      variant="outline"
+                      className="gap-1 border-white/30 bg-white/10 text-[11px] font-normal text-white backdrop-blur-sm hover:bg-white/15"
+                    >
+                      <Eye className="h-3 w-3" />
+                      {room.viewType} view
+                    </Badge>
+                  )}
                   {room.isAccessible && (
-                    <Badge variant="outline" className="gap-1 text-[11px]">
+                    <Badge
+                      variant="outline"
+                      className="gap-1 border-white/30 bg-white/10 text-[11px] font-normal text-white backdrop-blur-sm hover:bg-white/15"
+                    >
                       <Accessibility className="h-3 w-3" />
                       Accessible
                     </Badge>
                   )}
                   {room.isCorner && (
-                    <Badge variant="outline" className="text-[11px]">
+                    <Badge
+                      variant="outline"
+                      className="border-white/30 bg-white/10 text-[11px] font-normal text-white backdrop-blur-sm hover:bg-white/15"
+                    >
                       Corner
                     </Badge>
                   )}
                 </div>
-                <p className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
-                  <span className="flex items-center gap-1">
-                    <BedDouble className="h-3 w-3" />
-                    {room.roomType.name}
-                  </span>
-                  <span className="text-border">·</span>
-                  <span className="flex items-center gap-1">
-                    <Layers className="h-3 w-3" />
-                    Floor {room.floor}
-                  </span>
-                  {room.viewType && (
-                    <>
-                      <span className="text-border">·</span>
-                      <span className="flex items-center gap-1">
-                        <Eye className="h-3 w-3" />
-                        {room.viewType} View
-                      </span>
-                    </>
-                  )}
-                  <span className="text-border">·</span>
-                  <span className="flex items-center gap-1">
-                    <DollarSign className="h-3 w-3" />$
-                    {Number(room.roomType.basePrice).toFixed(0)}/night
-                  </span>
-                </p>
               </div>
             </div>
 
             {/* Actions */}
-            <div className="flex flex-wrap items-center gap-2 shrink-0">
+            <div className="flex shrink-0 flex-wrap items-center gap-2">
               {room.status === "AVAILABLE" && (
                 <Button
                   size="sm"
-                  className="h-8 gap-1.5 text-xs font-medium bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm shadow-emerald-200 dark:shadow-emerald-900/30"
                   onClick={() => setCheckInOpen(true)}
+                  className="gap-1.5 bg-white text-foreground shadow-lg hover:bg-white/90"
                 >
                   <LogIn className="h-3.5 w-3.5" />
-                  Check In
+                  Check in guest
                 </Button>
               )}
               {room.status === "OCCUPIED" && room.currentGuest && (
                 <Button
                   size="sm"
-                  variant="outline"
-                  className="h-8 gap-1.5 text-xs font-medium"
                   onClick={() => setCheckOutOpen(true)}
+                  className="gap-1.5 bg-white text-foreground shadow-lg hover:bg-white/90"
                 >
                   <LogOut className="h-3.5 w-3.5" />
-                  Check Out
+                  Check out
                 </Button>
               )}
               {isManager && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="sm" className="h-8 w-8 p-0">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8 w-8 border-white/30 bg-white/10 p-0 text-white backdrop-blur-sm hover:bg-white/20 hover:text-white"
+                    >
                       <MoreVertical className="h-3.5 w-3.5" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-44">
+                  <DropdownMenuContent align="end" className="w-48">
                     {room.status !== "OCCUPIED" && (
                       <DropdownMenuItem
                         onClick={() => setStatusOpen(true)}
                         className="gap-2 text-xs"
                       >
-                        <Settings2 className="h-3.5 w-3.5" /> Update Status
+                        <Settings2 className="h-3.5 w-3.5" /> Update status
                       </DropdownMenuItem>
                     )}
                     <DropdownMenuItem
                       onClick={() => setEditOpen(true)}
                       className="gap-2 text-xs"
                     >
-                      <Pencil className="h-3.5 w-3.5" /> Edit Room
+                      <Pencil className="h-3.5 w-3.5" /> Edit room
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
                       onClick={() => setDeleteOpen(true)}
                       className="gap-2 text-xs text-destructive focus:text-destructive"
                     >
-                      <Trash2 className="h-3.5 w-3.5" /> Delete Room
+                      <Trash2 className="h-3.5 w-3.5" /> Delete room
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               )}
             </div>
           </div>
-
-          {/* ── Quick-stat strip ── */}
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <StatCard
-              label="Base Rate"
-              value={`$${Number(room.roomType.basePrice).toFixed(0)}`}
-              sub="per night"
-              icon={DollarSign}
-              color="bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400"
-            />
-            <StatCard
-              label="Max Occupancy"
-              value={`${room.roomType.maxOccupancy} guests`}
-              icon={User}
-              color="bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400"
-            />
-            <StatCard
-              label="Room Items"
-              value={room.roomItems?.length ?? 0}
-              sub="assigned"
-              icon={Package}
-              color="bg-violet-100 dark:bg-violet-900/40 text-violet-600 dark:text-violet-400"
-            />
-            <StatCard
-              label="Total Stays"
-              value={history.length || "—"}
-              sub="recorded"
-              icon={TrendingUp}
-              color="bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400"
-            />
-          </div>
         </div>
-      </div>
+      </header>
 
-      {/* ── Body ── */}
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 py-6 space-y-5">
-        {/* Current-guest banner */}
-        {room.currentGuest && (
-          <div className="flex flex-col gap-3 rounded-xl border border-blue-200 dark:border-blue-800 bg-blue-50/60 dark:bg-blue-950/20 p-4 sm:flex-row sm:items-center sm:gap-4">
-            <div className="flex items-center gap-3 flex-1 min-w-0">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-200 dark:bg-blue-800 ring-2 ring-blue-100 dark:ring-blue-900">
-                <span className="text-sm font-bold text-blue-700 dark:text-blue-300">
-                  {room.currentGuest.guestName.charAt(0).toUpperCase()}
+      {/* ── BODY: Sidebar + Main ── */}
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 py-6">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[320px_1fr]">
+          {/* ─────────────── SIDEBAR ─────────────── */}
+          <aside className="space-y-4 lg:sticky lg:top-6 lg:self-start">
+            {/* Pricing */}
+            <SidebarCard title="Pricing">
+              <div className="flex items-baseline gap-1">
+                <span className="text-2xl font-bold tracking-tight tabular-nums">
+                  {formatCurrency(room.roomType.basePrice)}
                 </span>
+                <span className="text-xs text-muted-foreground">/ night</span>
               </div>
-              <div className="min-w-0">
-                <p className="text-sm font-semibold text-blue-900 dark:text-blue-100 truncate">
-                  {room.currentGuest.guestName}
-                </p>
-                <div className="flex flex-wrap items-center gap-x-3 text-xs text-blue-600 dark:text-blue-400 mt-0.5">
-                  {room.currentGuest.guestEmail && (
-                    <span className="truncate">
-                      {room.currentGuest.guestEmail}
+              <p className="mt-2 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                <Users className="h-3 w-3" />
+                Sleeps up to {room.roomType.maxOccupancy} guests
+              </p>
+            </SidebarCard>
+
+            {/* Current guest — only when OCCUPIED */}
+            {room.currentGuest && (
+              <SidebarCard
+                title="Current guest"
+                action={
+                  <span className="flex items-center gap-1 text-[10px] font-medium uppercase tracking-wider text-blue-600 dark:text-blue-400">
+                    <span className="h-1.5 w-1.5 rounded-full bg-blue-500" />
+                    Active
+                  </span>
+                }
+              >
+                <div className="flex items-center gap-3">
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-base font-semibold text-white ring-2 ring-background shadow-md">
+                    {room.currentGuest.guestName.charAt(0).toUpperCase()}
+                  </span>
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold leading-tight">
+                      {room.currentGuest.guestName}
+                    </p>
+                    {room.currentGuest.guestEmail && (
+                      <p className="mt-0.5 flex items-center gap-1 truncate text-[11px] text-muted-foreground">
+                        <Mail className="h-3 w-3" />
+                        {room.currentGuest.guestEmail}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Stay timeline */}
+                <div className="mt-4 grid grid-cols-2 gap-3 rounded-md border border-border/60 bg-muted/30 px-3 py-2.5">
+                  <div>
+                    <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                      Checked in
+                    </p>
+                    <p className="mt-1 flex items-center gap-1 text-xs font-semibold tabular-nums">
+                      <CalendarDays className="h-3 w-3 text-muted-foreground" />
+                      {new Date(room.currentGuest.checkIn).toLocaleDateString(
+                        undefined,
+                        { month: "short", day: "numeric" },
+                      )}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                      Stay length
+                    </p>
+                    <p className="mt-1 flex items-center gap-1 text-xs font-semibold tabular-nums">
+                      <Moon className="h-3 w-3 text-muted-foreground" />
+                      {stayNights} {stayNights === 1 ? "night" : "nights"}
+                    </p>
+                  </div>
+                </div>
+
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setCheckOutOpen(true)}
+                  className="mt-3 h-8 w-full gap-1.5 text-xs"
+                >
+                  <LogOut className="h-3.5 w-3.5" />
+                  Check out guest
+                </Button>
+              </SidebarCard>
+            )}
+
+            {/* At-a-glance stats */}
+            <SidebarCard title="At a glance">
+              <div className="grid grid-cols-2 gap-3">
+                <MiniStat
+                  icon={Package}
+                  label="Items"
+                  value={room.roomItems?.length ?? 0}
+                />
+                <MiniStat
+                  icon={TrendingUp}
+                  label="Stays"
+                  value={history.length || 0}
+                />
+                <MiniStat
+                  icon={Sparkles}
+                  label="Cleanings"
+                  value={room.housekeepingLogs?.length ?? 0}
+                />
+                <MiniStat
+                  icon={Star}
+                  label="Amenities"
+                  value={room.roomType?.amenities?.length ?? 0}
+                />
+              </div>
+            </SidebarCard>
+
+            {/* Quick actions (manager only) */}
+            {isManager && (
+              <SidebarCard title="Quick actions">
+                <div className="space-y-1.5">
+                  {room.status !== "OCCUPIED" && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-full justify-start gap-2 text-xs"
+                      onClick={() => setStatusOpen(true)}
+                    >
+                      <Settings2 className="h-3.5 w-3.5 text-muted-foreground" />
+                      Update status
+                    </Button>
+                  )}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-full justify-start gap-2 text-xs"
+                    onClick={() => setEditOpen(true)}
+                  >
+                    <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+                    Edit room details
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-full justify-start gap-2 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive"
+                    onClick={() => setDeleteOpen(true)}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                    Delete room
+                  </Button>
+                </div>
+              </SidebarCard>
+            )}
+          </aside>
+
+          {/* ─────────────── MAIN ─────────────── */}
+          <main className="min-w-0">
+            <Tabs
+              value={activeTab}
+              onValueChange={setActiveTab}
+              className="space-y-5"
+            >
+              <TabsList className="h-9 bg-muted/40 p-1">
+                <TabsTrigger
+                  value="overview"
+                  className="h-7 gap-1.5 text-xs data-[state=active]:bg-card data-[state=active]:shadow-sm"
+                >
+                  <BedDouble className="h-3.5 w-3.5" />
+                  Overview
+                </TabsTrigger>
+                <TabsTrigger
+                  value="history"
+                  className="h-7 gap-1.5 text-xs data-[state=active]:bg-card data-[state=active]:shadow-sm"
+                >
+                  <History className="h-3.5 w-3.5" />
+                  History
+                </TabsTrigger>
+                <TabsTrigger
+                  value="items"
+                  className="h-7 gap-1.5 text-xs data-[state=active]:bg-card data-[state=active]:shadow-sm"
+                >
+                  <Package className="h-3.5 w-3.5" />
+                  Items
+                  {room.roomItems?.length > 0 && (
+                    <span className="ml-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-muted px-1 text-[10px] font-medium text-muted-foreground">
+                      {room.roomItems.length}
                     </span>
                   )}
-                  <span className="flex items-center gap-1">
-                    <Calendar className="h-3 w-3" />
-                    Checked in{" "}
-                    {new Date(room.currentGuest.checkIn).toLocaleDateString(
-                      undefined,
-                      {
-                        month: "short",
-                        day: "numeric",
-                        year: "numeric",
-                      },
-                    )}
-                  </span>
-                </div>
-              </div>
-            </div>
-            <Button
-              size="sm"
-              variant="outline"
-              className="h-8 gap-1.5 text-xs font-medium shrink-0 border-blue-300 dark:border-blue-700 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/40"
-              onClick={() => setCheckOutOpen(true)}
-            >
-              <LogOut className="h-3.5 w-3.5" />
-              Check Out
-            </Button>
-          </div>
-        )}
+                </TabsTrigger>
+              </TabsList>
 
-        {/* ── Tabs ── */}
-        <Tabs
-          value={activeTab}
-          onValueChange={setActiveTab}
-          className="space-y-5"
-        >
-          <TabsList className="h-9 bg-muted/60 p-1">
-            <TabsTrigger
-              value="overview"
-              className="h-7 gap-1.5 text-xs data-[state=active]:bg-card"
-            >
-              <BedDouble className="h-3.5 w-3.5" />
-              Overview
-            </TabsTrigger>
-            <TabsTrigger
-              value="history"
-              className="h-7 gap-1.5 text-xs data-[state=active]:bg-card"
-            >
-              <History className="h-3.5 w-3.5" />
-              History
-            </TabsTrigger>
-            <TabsTrigger
-              value="items"
-              className="h-7 gap-1.5 text-xs data-[state=active]:bg-card"
-            >
-              <Package className="h-3.5 w-3.5" />
-              Items
-              {room.roomItems?.length > 0 && (
-                <span className="ml-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
-                  {room.roomItems.length}
-                </span>
-              )}
-            </TabsTrigger>
-          </TabsList>
-
-          {/* ── OVERVIEW ── */}
-          <TabsContent value="overview" className="mt-0">
-            <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
-              {/* Left — main details */}
-              <div className="lg:col-span-2 space-y-5">
-                {/* Room Info */}
-                <Card className="border-border/60">
-                  <CardHeader className="pb-2 pt-4 px-5">
-                    <CardTitle className="text-sm font-semibold">
-                      Room Information
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="px-5 pb-4">
-                    <div className="divide-y divide-border/60">
+              {/* ── OVERVIEW ── */}
+              <TabsContent value="overview" className="mt-0 space-y-5">
+                <SectionCard title="Room information">
+                  <div className="divide-y divide-border/60">
+                    <DetailRow
+                      icon={Hash}
+                      label="Room number"
+                      value={room.roomNumber}
+                    />
+                    <DetailRow
+                      icon={Layers}
+                      label="Floor"
+                      value={`Floor ${room.floor}`}
+                    />
+                    <DetailRow
+                      icon={BedDouble}
+                      label="Room type"
+                      value={room.roomType.name}
+                    />
+                    <DetailRow
+                      icon={BedDouble}
+                      label="Base rate"
+                      value={
+                        <span className="tabular-nums">
+                          {formatCurrency(room.roomType.basePrice)}
+                          <span className="ml-0.5 font-normal text-muted-foreground">
+                            /night
+                          </span>
+                        </span>
+                      }
+                    />
+                    <DetailRow
+                      icon={User}
+                      label="Max occupancy"
+                      value={`${room.roomType.maxOccupancy} guests`}
+                    />
+                    {room.viewType && (
                       <DetailRow
-                        icon={Hash}
-                        label="Room Number"
-                        value={room.roomNumber}
+                        icon={Eye}
+                        label="View"
+                        value={`${room.viewType} view`}
                       />
-                      <DetailRow
-                        icon={Layers}
-                        label="Floor"
-                        value={`Floor ${room.floor}`}
-                      />
-                      <DetailRow
-                        icon={BedDouble}
-                        label="Room Type"
-                        value={room.roomType.name}
-                      />
-                      <DetailRow
-                        icon={DollarSign}
-                        label="Base Rate"
-                        value={`$${Number(room.roomType.basePrice).toFixed(2)} / night`}
-                      />
-                      <DetailRow
-                        icon={User}
-                        label="Max Occupancy"
-                        value={`${room.roomType.maxOccupancy} guests`}
-                      />
-                      {room.viewType && (
-                        <DetailRow
-                          icon={Eye}
-                          label="View"
-                          value={`${room.viewType} View`}
-                        />
-                      )}
-                    </div>
-
-                    {(room.isAccessible || room.isCorner) && (
-                      <>
-                        <Separator className="my-3" />
-                        <div className="flex flex-wrap gap-2">
-                          {room.isAccessible && (
-                            <Badge
-                              variant="outline"
-                              className="gap-1.5 text-xs"
-                            >
-                              <Accessibility className="h-3 w-3" />
-                              Wheelchair Accessible
-                            </Badge>
-                          )}
-                          {room.isCorner && (
-                            <Badge variant="outline" className="text-xs">
-                              Corner Room
-                            </Badge>
-                          )}
-                        </div>
-                      </>
                     )}
-
-                    {room.notes && (
-                      <div className="mt-4 rounded-lg bg-muted/50 border border-border/50 px-3.5 py-3">
-                        <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">
-                          Notes
-                        </p>
-                        <p className="text-xs leading-relaxed">{room.notes}</p>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-
-                {/* Amenities */}
-                <Card className="border-border/60">
-                  <CardHeader className="pb-2 pt-4 px-5">
-                    <CardTitle className="text-sm font-semibold">
-                      Amenities
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="px-5 pb-4">
-                    {(room.roomType?.amenities ?? []).length === 0 ? (
-                      <EmptyState
-                        icon={Star}
-                        title="No amenities listed"
-                        size="sm"
-                      />
-                    ) : (
-                      <div className="flex flex-wrap gap-2">
-                        {(room.roomType.amenities as string[]).map((a) => (
-                          <Badge
-                            key={a}
-                            variant="secondary"
-                            className="text-xs"
-                          >
-                            {a}
-                          </Badge>
-                        ))}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Right — housekeeping */}
-              <div className="space-y-5">
-                <Card className="border-border/60">
-                  <CardHeader className="pb-2 pt-4 px-5">
-                    <CardTitle className="text-sm font-semibold">
-                      Housekeeping Log
-                    </CardTitle>
-                    <CardDescription className="text-xs">
-                      Recent cleaning activity
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="px-5 pb-4">
-                    {(room.housekeepingLogs ?? []).length === 0 ? (
-                      <div className="flex flex-col items-center justify-center py-6 gap-2">
-                        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-muted">
-                          <Clock className="h-4 w-4 text-muted-foreground" />
-                        </div>
-                        <p className="text-xs text-muted-foreground">
-                          No records yet
-                        </p>
-                      </div>
-                    ) : (
-                      <div className="space-y-3">
-                        {(room.housekeepingLogs as any[])
-                          .slice(0, 5)
-                          .map((log) => (
-                            <div
-                              key={log.id}
-                              className="flex items-start gap-3"
-                            >
-                              <div
-                                className={cn(
-                                  "mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full",
-                                  log.status === "COMPLETED"
-                                    ? "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600"
-                                    : "bg-blue-100 dark:bg-blue-900/40 text-blue-600",
-                                )}
-                              >
-                                <CheckCircle2 className="h-3 w-3" />
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-xs font-medium">
-                                  {log.status.replace("_", " ")}
-                                </p>
-                                <p className="text-[11px] text-muted-foreground flex items-center gap-1 mt-0.5">
-                                  <Clock className="h-3 w-3" />
-                                  {new Date(
-                                    log.scheduledAt,
-                                  ).toLocaleDateString()}
-                                  {log.user?.name && ` · ${log.user.name}`}
-                                </p>
-                              </div>
-                            </div>
-                          ))}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-
-                {/* Quick actions for manager */}
-                {isManager && (
-                  <Card className="border-border/60">
-                    <CardHeader className="pb-2 pt-4 px-5">
-                      <CardTitle className="text-sm font-semibold">
-                        Quick Actions
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="px-5 pb-4 space-y-2">
-                      {room.status !== "OCCUPIED" && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="w-full justify-start gap-2 h-8 text-xs"
-                          onClick={() => setStatusOpen(true)}
-                        >
-                          <Settings2 className="h-3.5 w-3.5" />
-                          Update Status
-                        </Button>
-                      )}
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="w-full justify-start gap-2 h-8 text-xs"
-                        onClick={() => setEditOpen(true)}
-                      >
-                        <Pencil className="h-3.5 w-3.5" />
-                        Edit Room Details
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="w-full justify-start gap-2 h-8 text-xs text-destructive hover:text-destructive hover:bg-destructive/10 hover:border-destructive/30"
-                        onClick={() => setDeleteOpen(true)}
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                        Delete Room
-                      </Button>
-                    </CardContent>
-                  </Card>
-                )}
-              </div>
-            </div>
-          </TabsContent>
-
-          {/* ── HISTORY ── */}
-          <TabsContent value="history" className="mt-0">
-            <Card className="border-border/60">
-              <CardHeader className="px-5 pt-4 pb-3 flex flex-row items-start justify-between">
-                <div>
-                  <CardTitle className="text-sm font-semibold">
-                    Guest History
-                  </CardTitle>
-                  <CardDescription className="text-xs mt-0.5">
-                    All check-in / check-out records for this room
-                  </CardDescription>
-                </div>
-              </CardHeader>
-              <CardContent className="p-0">
-                {isLoading && history.length === 0 ? (
-                  <div className="px-5 pb-4 space-y-3">
-                    {Array.from({ length: 4 }).map((_, i) => (
-                      <div
-                        key={i}
-                        className="h-14 animate-pulse rounded-xl bg-muted"
-                      />
-                    ))}
                   </div>
-                ) : history.length === 0 ? (
-                  <EmptyState
-                    icon={History}
-                    title="No guest history"
-                    description="Check-in records will appear here once guests stay in this room"
-                  />
-                ) : (
-                  <>
-                    <ScrollArea className="h-[420px]">
-                      <div className="px-5 pb-2 space-y-1">
-                        {history.map((assignment, idx) => {
-                          const isActive = !assignment.checkOut;
-                          const stayDays = assignment.checkOut
-                            ? Math.ceil(
-                                (new Date(assignment.checkOut).getTime() -
-                                  new Date(assignment.checkIn).getTime()) /
-                                  86400000,
-                              )
-                            : Math.ceil(
-                                (Date.now() -
-                                  new Date(assignment.checkIn).getTime()) /
-                                  86400000,
-                              );
 
-                          return (
+                  {room.notes && (
+                    <div className="mt-4 rounded-md border-l-2 border-primary/40 bg-muted/30 px-3.5 py-2.5">
+                      <p className="mb-1 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                        Notes
+                      </p>
+                      <p className="text-xs leading-relaxed text-foreground/90">
+                        {room.notes}
+                      </p>
+                    </div>
+                  )}
+                </SectionCard>
+
+                <SectionCard title="Amenities">
+                  {(room.roomType?.amenities ?? []).length === 0 ? (
+                    <EmptyState
+                      icon={Star}
+                      title="No amenities listed"
+                      size="sm"
+                    />
+                  ) : (
+                    <div className="flex flex-wrap gap-1.5">
+                      {(room.roomType.amenities as string[]).map((a) => (
+                        <Badge
+                          key={a}
+                          variant="secondary"
+                          className="gap-1 text-xs font-normal"
+                        >
+                          <Star className="h-3 w-3 text-amber-500" />
+                          {a}
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+                </SectionCard>
+
+                <SectionCard
+                  title="Housekeeping log"
+                  description="Recent cleaning activity"
+                >
+                  {(room.housekeepingLogs ?? []).length === 0 ? (
+                    <div className="flex flex-col items-center justify-center gap-2 py-6">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-muted text-muted-foreground">
+                        <Clock className="h-4 w-4" />
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        No records yet
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="relative space-y-4 before:absolute before:left-3 before:top-2 before:bottom-2 before:w-px before:bg-border/60">
+                      {(room.housekeepingLogs as any[])
+                        .slice(0, 5)
+                        .map((log) => (
+                          <div
+                            key={log.id}
+                            className="relative flex items-start gap-3 pl-0"
+                          >
                             <div
-                              key={assignment.id}
                               className={cn(
-                                "flex items-center gap-3 rounded-xl px-3 py-3 transition-colors",
-                                isActive
-                                  ? "bg-blue-50/60 dark:bg-blue-950/20"
-                                  : "hover:bg-muted/50",
+                                "relative z-10 mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full ring-4 ring-card",
+                                log.status === "COMPLETED"
+                                  ? "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/40 dark:text-emerald-400"
+                                  : "bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400",
                               )}
                             >
-                              {/* avatar */}
+                              <CheckCircle2 className="h-3 w-3" />
+                            </div>
+                            <div className="min-w-0 flex-1 pt-0.5">
+                              <p className="text-xs font-medium">
+                                {log.status.replace("_", " ")}
+                              </p>
+                              <p className="mt-0.5 flex items-center gap-1 text-[11px] text-muted-foreground">
+                                <Clock className="h-3 w-3" />
+                                {new Date(log.scheduledAt).toLocaleDateString()}
+                                {log.user?.name && ` · ${log.user.name}`}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                  )}
+                </SectionCard>
+              </TabsContent>
+
+              {/* ── HISTORY ── */}
+              <TabsContent value="history" className="mt-0">
+                <SectionCard
+                  title="Guest history"
+                  description="All check-in / check-out records for this room"
+                  bodyClassName="p-0"
+                >
+                  {isLoading && history.length === 0 ? (
+                    <div className="space-y-2 px-5 pb-4">
+                      {Array.from({ length: 4 }).map((_, i) => (
+                        <div
+                          key={i}
+                          className="h-14 animate-pulse rounded-md bg-muted"
+                        />
+                      ))}
+                    </div>
+                  ) : history.length === 0 ? (
+                    <div className="px-5 pb-5">
+                      <EmptyState
+                        icon={History}
+                        title="No guest history"
+                        description="Check-in records will appear here once guests stay in this room"
+                      />
+                    </div>
+                  ) : (
+                    <>
+                      <ScrollArea className="h-105">
+                        <div className="divide-y divide-border/60">
+                          {history.map((assignment) => {
+                            const isActive = !assignment.checkOut;
+                            const stayDays = assignment.checkOut
+                              ? Math.ceil(
+                                  (new Date(assignment.checkOut).getTime() -
+                                    new Date(assignment.checkIn).getTime()) /
+                                    86400000,
+                                )
+                              : Math.ceil(
+                                  (Date.now() -
+                                    new Date(assignment.checkIn).getTime()) /
+                                    86400000,
+                                );
+
+                            return (
                               <div
+                                key={assignment.id}
                                 className={cn(
-                                  "flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-bold",
-                                  isActive
-                                    ? "bg-blue-200 dark:bg-blue-800 text-blue-700 dark:text-blue-300"
-                                    : "bg-muted text-muted-foreground",
+                                  "flex items-center gap-3 px-5 py-3 transition-colors hover:bg-muted/30",
+                                  isActive &&
+                                    "bg-blue-50/40 dark:bg-blue-950/10",
                                 )}
                               >
-                                {assignment.guestName.charAt(0).toUpperCase()}
-                              </div>
+                                <span
+                                  className={cn(
+                                    "flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-semibold ring-2 ring-background",
+                                    isActive
+                                      ? "bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-sm"
+                                      : "bg-muted text-foreground/70",
+                                  )}
+                                >
+                                  {assignment.guestName.charAt(0).toUpperCase()}
+                                </span>
 
-                              <div className="flex-1 min-w-0">
-                                <p className="text-xs font-semibold truncate">
-                                  {assignment.guestName}
-                                </p>
-                                <div className="flex flex-wrap items-center gap-x-2 text-[11px] text-muted-foreground mt-0.5">
-                                  <span className="flex items-center gap-1">
-                                    <Calendar className="h-3 w-3" />
-                                    {new Date(
-                                      assignment.checkIn,
-                                    ).toLocaleDateString()}
-                                  </span>
-                                  {assignment.checkOut && (
-                                    <span>
-                                      →{" "}
+                                <div className="min-w-0 flex-1">
+                                  <div className="flex items-center gap-2">
+                                    <p className="truncate text-xs font-semibold">
+                                      {assignment.guestName}
+                                    </p>
+                                    {isActive && (
+                                      <span className="flex items-center gap-1 text-[10px] font-medium uppercase tracking-wider text-blue-600 dark:text-blue-400">
+                                        <span className="h-1.5 w-1.5 rounded-full bg-blue-500" />
+                                        Active
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className="mt-0.5 flex flex-wrap items-center gap-x-2 text-[11px] text-muted-foreground">
+                                    <span className="flex items-center gap-1">
+                                      <Calendar className="h-3 w-3" />
                                       {new Date(
-                                        assignment.checkOut,
+                                        assignment.checkIn,
                                       ).toLocaleDateString()}
                                     </span>
-                                  )}
+                                    {assignment.checkOut && (
+                                      <span>
+                                        →{" "}
+                                        {new Date(
+                                          assignment.checkOut,
+                                        ).toLocaleDateString()}
+                                      </span>
+                                    )}
+                                  </div>
                                 </div>
-                              </div>
 
-                              <div className="shrink-0 flex flex-col items-end gap-1">
-                                {isActive ? (
-                                  <Badge className="text-[10px] h-5 px-1.5 bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800 hover:bg-blue-100">
-                                    Active
-                                  </Badge>
-                                ) : (
-                                  <Badge className="text-[10px] h-5 px-1.5 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800 hover:bg-emerald-50">
-                                    Done
-                                  </Badge>
-                                )}
-                                <span className="text-[10px] text-muted-foreground">
+                                <span className="shrink-0 text-xs font-medium tabular-nums text-muted-foreground">
                                   {stayDays}n
                                 </span>
                               </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </ScrollArea>
-
-                    {historyMeta && (historyMeta as any).totalPages > 1 && (
-                      <div className="flex items-center justify-between border-t border-border/60 px-5 py-3">
-                        <p className="text-[11px] text-muted-foreground">
-                          Page {historyPage} of{" "}
-                          {(historyMeta as any).totalPages}
-                        </p>
-                        <div className="flex gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-7 text-xs"
-                            onClick={() =>
-                              setHistoryPage((p) => Math.max(1, p - 1))
-                            }
-                            disabled={historyPage === 1}
-                          >
-                            Previous
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-7 text-xs"
-                            onClick={() => setHistoryPage((p) => p + 1)}
-                            disabled={
-                              historyPage === (historyMeta as any).totalPages
-                            }
-                          >
-                            Next
-                          </Button>
+                            );
+                          })}
                         </div>
-                      </div>
-                    )}
-                  </>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
+                      </ScrollArea>
 
-          {/* ── ITEMS ── */}
-          <TabsContent value="items" className="mt-0">
-            <Card className="border-border/60">
-              <CardHeader className="px-5 pt-4 pb-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="text-sm font-semibold">
-                      Room Items
-                    </CardTitle>
-                    <CardDescription className="text-xs mt-0.5">
-                      Inventory items assigned to this room
-                    </CardDescription>
-                  </div>
-                  {isManager && (
-                    <Button
-                      size="sm"
-                      className="h-8 gap-1.5 text-xs"
-                      onClick={() => setAddItemOpen(true)}
-                    >
-                      <Plus className="h-3.5 w-3.5" />
-                      Add Item
-                    </Button>
+                      {historyMeta && (historyMeta as any).totalPages > 1 && (
+                        <div className="flex items-center justify-between border-t border-border/60 px-5 py-3">
+                          <p className="text-[11px] text-muted-foreground">
+                            Page{" "}
+                            <span className="font-medium text-foreground tabular-nums">
+                              {historyPage}
+                            </span>{" "}
+                            of{" "}
+                            <span className="font-medium text-foreground tabular-nums">
+                              {(historyMeta as any).totalPages}
+                            </span>
+                          </p>
+                          <div className="flex gap-1.5">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-7 px-2.5 text-xs"
+                              onClick={() =>
+                                setHistoryPage((p) => Math.max(1, p - 1))
+                              }
+                              disabled={historyPage === 1}
+                            >
+                              Previous
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-7 px-2.5 text-xs"
+                              onClick={() => setHistoryPage((p) => p + 1)}
+                              disabled={
+                                historyPage === (historyMeta as any).totalPages
+                              }
+                            >
+                              Next
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </>
                   )}
-                </div>
-              </CardHeader>
-              <CardContent className="p-0">
-                {(room.roomItems ?? []).length === 0 ? (
-                  <EmptyState
-                    icon={Package}
-                    title="No items assigned"
-                    description="Assign inventory items that belong in this room"
-                    action={
-                      isManager ? (
-                        <Button
-                          size="sm"
-                          className="h-8 gap-1.5 text-xs"
-                          onClick={() => setAddItemOpen(true)}
-                        >
-                          <Plus className="h-3.5 w-3.5" />
-                          Add Item
-                        </Button>
-                      ) : undefined
-                    }
-                  />
-                ) : (
-                  <div className="px-5 pb-4 space-y-2">
-                    {(room.roomItems as any[]).map((ri) => (
-                      <div
-                        key={ri.id}
-                        className="flex items-center gap-3 rounded-xl border border-border/50 bg-muted/30 px-3.5 py-3 hover:bg-muted/50 transition-colors"
+                </SectionCard>
+              </TabsContent>
+
+              {/* ── ITEMS ── */}
+              <TabsContent value="items" className="mt-0">
+                <SectionCard
+                  title="Room items"
+                  description="Inventory items assigned to this room"
+                  action={
+                    isManager && (
+                      <Button
+                        size="sm"
+                        onClick={() => setAddItemOpen(true)}
+                        className="gap-1.5"
                       >
-                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-background border border-border/60">
-                          <Package className="h-3.5 w-3.5 text-muted-foreground" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs font-semibold truncate">
-                            {ri.hotelItem?.name ?? "Unknown"}
-                          </p>
-                          <p className="text-[11px] text-muted-foreground mt-0.5">
-                            {ri.hotelItem?.category?.name}
-                            {" · "}
-                            Std: {Number(ri.standardQty).toFixed(1)}{" "}
-                            {ri.hotelItem?.unit?.abbreviation}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-3 shrink-0">
-                          <div className="hidden sm:block text-right">
-                            <p className="text-xs font-bold tabular-nums">
-                              {Number(ri.hotelItem?.stockQuantity ?? 0).toFixed(
-                                1,
-                              )}
+                        <Plus className="h-3.5 w-3.5" />
+                        Add item
+                      </Button>
+                    )
+                  }
+                  bodyClassName="p-0"
+                >
+                  {(room.roomItems ?? []).length === 0 ? (
+                    <div className="px-5 pb-5">
+                      <EmptyState
+                        icon={Package}
+                        title="No items assigned"
+                        description="Assign inventory items that belong in this room"
+                        action={
+                          isManager ? (
+                            <Button
+                              size="sm"
+                              onClick={() => setAddItemOpen(true)}
+                              className="gap-1.5"
+                            >
+                              <Plus className="h-3.5 w-3.5" />
+                              Add item
+                            </Button>
+                          ) : undefined
+                        }
+                      />
+                    </div>
+                  ) : (
+                    <div className="divide-y divide-border/60">
+                      {(room.roomItems as any[]).map((ri) => (
+                        <div
+                          key={ri.id}
+                          className="flex items-center gap-3 px-5 py-3 transition-colors hover:bg-muted/30"
+                        >
+                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-border/60 bg-muted/40 text-muted-foreground">
+                            <Package className="h-3.5 w-3.5" />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-xs font-semibold">
+                              {ri.hotelItem?.name ?? "Unknown"}
                             </p>
-                            <p className="text-[10px] text-muted-foreground">
-                              in stock
+                            <p className="mt-0.5 text-[11px] text-muted-foreground">
+                              {ri.hotelItem?.category?.name}
+                              {" · "}
+                              Std: {Number(ri.standardQty).toFixed(1)}{" "}
+                              {ri.hotelItem?.unit?.abbreviation}
                             </p>
                           </div>
-                          {isManager && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                              onClick={() => setRemoveItemId(ri.id)}
-                            >
-                              <X className="h-3.5 w-3.5" />
-                            </Button>
-                          )}
+                          <div className="flex shrink-0 items-center gap-3">
+                            <div className="hidden text-right sm:block">
+                              <p className="text-xs font-semibold tabular-nums">
+                                {Number(
+                                  ri.hotelItem?.stockQuantity ?? 0,
+                                ).toFixed(1)}
+                              </p>
+                              <p className="text-[10px] text-muted-foreground">
+                                in stock
+                              </p>
+                            </div>
+                            {isManager && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                                onClick={() => setRemoveItemId(ri.id)}
+                                aria-label="Remove item"
+                              >
+                                <X className="h-3.5 w-3.5" />
+                              </Button>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+                      ))}
+                    </div>
+                  )}
+                </SectionCard>
+              </TabsContent>
+            </Tabs>
+          </main>
+        </div>
       </div>
 
       {/* ── Modals ── */}
@@ -1132,8 +1171,8 @@ export default function RoomDetailPage() {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-sm">
-              Remove Room Item
+            <AlertDialogTitle className="text-base">
+              Remove room item
             </AlertDialogTitle>
             <AlertDialogDescription className="text-xs">
               Are you sure you want to remove this item from the room? This
@@ -1145,7 +1184,7 @@ export default function RoomDetailPage() {
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction
-              className="h-8 text-xs bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="h-8 bg-destructive text-xs text-destructive-foreground hover:bg-destructive/90"
               onClick={() => removeItemId && handleRemoveItem(removeItemId)}
             >
               Remove
@@ -1158,11 +1197,11 @@ export default function RoomDetailPage() {
       <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-sm">
-              Delete Room {room.roomNumber}?
+            <AlertDialogTitle className="text-base">
+              Delete room {room.roomNumber}?
             </AlertDialogTitle>
             <AlertDialogDescription className="text-xs">
-              This will permanently delete Room {room.roomNumber} and all
+              This will permanently delete room {room.roomNumber} and all
               associated data. This cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -1171,15 +1210,63 @@ export default function RoomDetailPage() {
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction
-              className="h-8 text-xs bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="h-8 bg-destructive text-xs text-destructive-foreground hover:bg-destructive/90"
               onClick={handleDelete}
               disabled={isDeleting}
             >
-              {isDeleting ? "Deleting…" : "Delete Room"}
+              {isDeleting ? "Deleting…" : "Delete room"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+    </div>
+  );
+}
+
+/* ─── Mini stat used in the sidebar grid ──────────────────────── */
+function MiniStat({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: React.ElementType;
+  label: string;
+  value: number | string;
+}) {
+  return (
+    <div className="rounded-md border border-border/60 bg-muted/20 px-3 py-2.5">
+      <Icon className="h-3.5 w-3.5 text-muted-foreground" />
+      <p className="mt-1.5 text-lg font-semibold tabular-nums leading-none">
+        {value}
+      </p>
+      <p className="mt-1 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+        {label}
+      </p>
+    </div>
+  );
+}
+
+/* ─── Guard screen ────────────────────────────────────────────── */
+function GuardScreen({
+  icon: Icon,
+  title,
+  description,
+}: {
+  icon: React.ElementType;
+  title: string;
+  description: React.ReactNode;
+}) {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-background p-6">
+      <div className="w-full max-w-sm space-y-4 rounded-lg border border-border/60 bg-card p-8 text-center">
+        <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-muted text-muted-foreground">
+          <Icon className="h-5 w-5" />
+        </div>
+        <h2 className="text-sm font-semibold tracking-tight">{title}</h2>
+        <p className="text-xs leading-relaxed text-muted-foreground">
+          {description}
+        </p>
+      </div>
     </div>
   );
 }
