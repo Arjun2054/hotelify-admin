@@ -15,6 +15,9 @@ import { ErrorBoundary } from "./components/shared/ErrorBoundary.tsx";
 // Auth pages
 const LoginPage = lazy(() => import("./pages/Login.tsx"));
 const RegisterPage = lazy(() => import("./pages/Register.tsx"));
+const OtpVerificationPage = lazy(
+  () => import("./pages/OtpVerificationPage.tsx"),
+);
 
 // Stock Management
 const StockManagementPage = lazy(
@@ -42,12 +45,18 @@ const HotelStockMovementPage = lazy(
   () => import("./pages/HotelStockMovementPage.tsx"),
 );
 
+// Rooms
 const RoomPage = lazy(() => import("./pages/RoomPage.tsx"));
 
 const RoomDashboardPage = lazy(
   () => import("./components/room/DashboardPage.tsx"),
 );
 
+const RoomDetailPage = lazy(() => import("./pages/RoomDetailPage.tsx"));
+
+const RoomCheckInPage = lazy(() => import("./pages/CheckInPage.tsx"));
+
+// Fnb
 const FnbOverviewPage = lazy(() => import("./pages/FnbOverviewPage.tsx"));
 
 const FnbPage = lazy(() => import("./pages/FnbPage.tsx"));
@@ -62,13 +71,13 @@ const OrdersPage = lazy(() => import("./pages/OrdersPage.tsx"));
 
 const KitchenDisplayPage = lazy(() => import("./pages/KitchenDisplayPage.tsx"));
 
+//Hotel Analytics
+
 const HotelAnalyticsPage = lazy(() => import("./pages/HotelAnalytics.tsx"));
 
+//Housekeeping
 const HousekeepingPage = lazy(() => import("./pages/HousekeepingPage.tsx"));
-
-const RoomDetailPage = lazy(() => import("./pages/RoomDetailPage.tsx"));
-
-const RoomCheckInPage = lazy(() => import("./pages/CheckInPage.tsx"));
+// Hr
 
 import StaffPage from "./pages/StaffPage.tsx";
 import { DepartmentGuard } from "./components/guards/DepartmentGuard.tsx";
@@ -98,6 +107,15 @@ const router = createBrowserRouter([
     element: (
       <Suspense fallback={<LoadingSpinner />}>
         <RegisterPage />
+      </Suspense>
+    ),
+  },
+
+  {
+    path: "/verify-otp",
+    element: (
+      <Suspense fallback={<LoadingSpinner />}>
+        <OtpVerificationPage />
       </Suspense>
     ),
   },

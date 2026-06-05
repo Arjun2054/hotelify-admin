@@ -1,4 +1,28 @@
+export interface WeeklyDailyBreakdown {
+  day: string;
+  date: string;
+  bookings: number;
+  revenue: number;
+  isToday: boolean;
+  isPast: boolean;
+}
+
+export interface WeeklySummary {
+  revenue: number;
+  bookings: number;
+  lastWeekRevenue: number;
+  lastWeekBookings: number;
+  revenueGrowth: number;
+  bookingsGrowth: number;
+  avgDailyRevenue: number;
+  avgDailyBookings: number;
+  projectedWeekRevenue: number;
+  dailyBreakdown: WeeklyDailyBreakdown[];
+  weekRange: { start: string; end: string };
+}
+
 export interface DashboardStats {
+  // Room counts
   totalRooms: number;
   available: number;
   occupied: number;
@@ -7,13 +31,17 @@ export interface DashboardStats {
   outOfOrder: number;
   occupancyRate: number;
   estimatedDailyRevenue: number;
+  // Housekeeping
   pendingHousekeeping: number;
   todayCheckIns: number;
   activeAssignments: number;
+  // Monthly
   currentMonthRevenue: number;
   currentMonthBookings: number;
   revenueGrowth: number;
   bookingsGrowth: number;
+  // ✅ Weekly
+  weekly: WeeklySummary;
 }
 
 export interface RoomPerformanceMetric {

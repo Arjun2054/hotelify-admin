@@ -3,14 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import {
   Form,
   FormControl,
@@ -82,8 +75,8 @@ export default function RegisterPage() {
         type: data.type as OrganizationType,
         password: data.password,
       });
-      toast("Account created successfully. Please log in.");
-      navigate("/login");
+      toast.success("Account created! Please verify your email.");
+      navigate("/verify-otp", { state: { email: data.email } });
     } catch (err: any) {
       toast("Registration Failed");
     }
@@ -304,7 +297,7 @@ export default function RegisterPage() {
                                     <h3 className="font-bold text-sm text-foreground mb-1">
                                       {config.label}
                                     </h3>
-                                    <p className="text-xs text-muted-foreground leading-relaxed flex-grow line-clamp-2">
+                                    <p className="text-xs text-muted-foreground leading-relaxed grow line-clamp-2">
                                       {config.templateDescription}
                                     </p>
                                     {config.features &&

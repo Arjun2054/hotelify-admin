@@ -1,4 +1,4 @@
-// store/inventoryAnalyticsStore.ts
+// store/hotel/inventoryAnalyticsStore.ts
 import { inventoryAnalyticsService } from "@/services/hotel/inventoryAnalyticsService";
 import type {
   FullInventoryAnalytics,
@@ -17,7 +17,9 @@ interface InventoryAnalyticsState {
   error: string | null;
 
   fetchDashboard: () => Promise<void>;
-  fetchAnalytics: () => Promise<void>;
+  fetchAnalytics: (
+    overrides?: Partial<InventoryAnalyticsFilter>,
+  ) => Promise<void>;
   setFilters: (f: Partial<InventoryAnalyticsFilter>) => void;
   setYear: (y: number) => void;
   clearError: () => void;
@@ -44,15 +46,23 @@ export const useInventoryAnalyticsStore = create<InventoryAnalyticsState>(
       }
     },
 
-    fetchAnalytics: async () => {
+    fetchAnalytics: async (overrides?: Partial<InventoryAnalyticsFilter>) => {
       set({ isLoading: true, error: null });
       try {
         const { filters, selectedYear } = get();
+
+        const merged: InventoryAnalyticsFilter = { ...filters, ...overrides };
+
+        const start = merged.startDate ?? new Date(selectedYear, 0, 1);
+        const end = merged.endDate ?? new Date(selectedYear, 11, 31);
+
+        // Guard: ensure startDate is never after endDate.
         const effectiveFilters: InventoryAnalyticsFilter = {
-          ...filters,
-          startDate: filters.startDate ?? new Date(selectedYear, 0, 1),
-          endDate: filters.endDate ?? new Date(selectedYear, 11, 31),
+          ...merged,
+          startDate: start <= end ? start : end,
+          endDate: start <= end ? end : start,
         };
+
         const analytics =
           await inventoryAnalyticsService.getFullAnalytics(effectiveFilters);
         set({ analytics, isLoading: false });
@@ -61,15 +71,16 @@ export const useInventoryAnalyticsStore = create<InventoryAnalyticsState>(
       }
     },
 
-    setFilters: (newFilters) => {
-      set((s) => ({ filters: { ...s.filters, ...newFilters } }));
-    },
+    setFilters: (newFilters) =>
+      set((s) => ({ filters: { ...s.filters, ...newFilters } })),
 
     setYear: (year) => set({ selectedYear: year }),
     clearError: () => set({ error: null }),
+
     refresh: () => {
-      get().fetchDashboard();
-      get().fetchAnalytics();
+      const { fetchDashboard, fetchAnalytics } = get();
+      fetchDashboard();
+      fetchAnalytics();
     },
   }),
 );

@@ -17,7 +17,12 @@ interface RoomAnalyticsState {
   error: string | null;
 
   fetchDashboard: () => Promise<void>;
-  fetchAnalytics: () => Promise<void>;
+  /**
+   * Accepts an optional filter override so callers can pass the latest
+   * filters/year directly without relying on React state having flushed
+   * before the call is made (eliminates the setTimeout anti-pattern).
+   */
+  fetchAnalytics: (overrides?: Partial<AnalyticsFilter>) => Promise<void>;
   setFilters: (filters: Partial<AnalyticsFilter>) => void;
   setYear: (year: number) => void;
   clearError: () => void;
@@ -42,15 +47,27 @@ export const useRoomAnalyticsStore = create<RoomAnalyticsState>((set, get) => ({
     }
   },
 
-  fetchAnalytics: async () => {
+  fetchAnalytics: async (overrides?: Partial<AnalyticsFilter>) => {
     set({ isLoading: true, error: null });
     try {
       const { filters, selectedYear } = get();
+
+      // Merge any in-flight overrides (e.g. a just-applied filter or year
+      // change) so we never read stale Zustand state that hasn't flushed yet.
+      const merged: AnalyticsFilter = { ...filters, ...overrides };
+
+      // Validate: if only one end of the range is provided, derive the other
+      // from selectedYear so the API always receives a coherent range.
+      const start = merged.startDate ?? new Date(selectedYear, 0, 1);
+      const end = merged.endDate ?? new Date(selectedYear, 11, 31);
+
+      // Guard: startDate must not be after endDate.
       const effectiveFilters: AnalyticsFilter = {
-        ...filters,
-        startDate: filters.startDate ?? new Date(selectedYear, 0, 1),
-        endDate: filters.endDate ?? new Date(selectedYear, 11, 31),
+        ...merged,
+        startDate: start <= end ? start : end,
+        endDate: start <= end ? end : start,
       };
+
       const analytics =
         await roomAnalyticsService.getFullAnalytics(effectiveFilters);
       set({ analytics, isLoading: false });

@@ -73,6 +73,7 @@ interface AuthStore {
   // Actions
   login: (credentials: LoginCredentials) => Promise<void>;
   register: (data: RegisterData) => Promise<void>;
+  verifyOtp: (email: string, otp: string) => Promise<void>;
   logout: () => Promise<void>;
   checkAuth: () => Promise<void>;
   setActiveOrganization: (orgId: string) => Promise<void>; // now async
@@ -127,14 +128,18 @@ export const useAuthStore = create<AuthStore>()(
             loading: false,
           });
 
-          // Fetch modules for the active org right after login
           await get().fetchActiveOrgModules();
         } catch (error: any) {
+          // ✅ Extract the exact message the backend sent
+          const message =
+            error?.response?.data?.message || error?.message || "Login failed";
+
           set({
-            error: error.response?.data?.message || "Login failed",
+            error: message, // ✅ store the real message for the inline error block
             loading: false,
           });
-          throw error;
+
+          throw error; // ✅ re-throw so onSubmit catch can also read it for the toast
         }
       },
 
@@ -147,6 +152,20 @@ export const useAuthStore = create<AuthStore>()(
         } catch (error: any) {
           set({
             error: error.response?.data?.message || "Registration failed",
+            loading: false,
+          });
+          throw error;
+        }
+      },
+
+      verifyOtp: async (email, otp) => {
+        set({ loading: true, error: null });
+        try {
+          await authService.verifyOtp(email, otp); // You'll create this in authService
+          set({ loading: false });
+        } catch (error: any) {
+          set({
+            error: error.response?.data?.message || "OTP verification failed",
             loading: false,
           });
           throw error;

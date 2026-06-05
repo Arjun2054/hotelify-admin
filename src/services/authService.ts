@@ -28,11 +28,19 @@ class AuthService {
     return response.data;
   }
 
+  // ====================== NEW: OTP Verification ======================
+  async verifyOtp(email: string, otp: string): Promise<{ message: string }> {
+    const response = await adminApi.post<{ message: string }>(
+      `${this.baseUrl}/verify-otp`,
+      { email, otp },
+    );
+    return response.data;
+  }
+
   async logout(): Promise<void> {
     // Clear local storage
-    localStorage.removeItem("access_token");
-    localStorage.removeItem("refresh_token");
-    localStorage.removeItem("user");
+    await adminApi.post(`${this.baseUrl}/logout`);
+    this.clearStorage();
   }
 
   async refreshToken(): Promise<{ success: boolean }> {
@@ -47,7 +55,7 @@ class AuthService {
     user: User;
     organizations: Organization[];
   }> {
-    const response = await adminApi.post<{
+    const response = await adminApi.get<{
       success: boolean;
       user: User;
       organizations: Organization[];

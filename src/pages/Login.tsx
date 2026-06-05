@@ -8,7 +8,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import * as z from "zod";
-import { Boxes, Loader2 } from "lucide-react";
+import { Boxes, Eye, EyeOff, Loader2 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { Input } from "@/components/ui/input";
 import { useAuthStore } from "@/store/useAuthStore";
@@ -30,7 +30,8 @@ const Login = () => {
   const { login, loading, error, clearError } = useAuthStore();
   const [showPassword, setShowPassword] = useState(false);
 
-  const from = (location.state as any)?.from?.pathname || "/dashboard";
+  const from = (location.state as any)?.from?.pathname || "/overallanalytics";
+
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -43,17 +44,35 @@ const Login = () => {
     clearError();
     try {
       await login(data);
-      toast("Login successful");
-      navigate(from, { replace: true });
+      toast.success("Login successful");
+
+      const { getActiveOrganization } = useAuthStore.getState();
+      const activeOrg = getActiveOrganization();
+
+      switch (activeOrg?.type) {
+        case "HOTEL":
+          navigate("/overallanalytics", { replace: true });
+          break;
+        case "STORE":
+          navigate("/dashboard", { replace: true });
+          break;
+        case "CLOTHING":
+          navigate("/clothing-dashboard", { replace: true });
+          break;
+        default:
+          navigate(from, { replace: true });
+      }
     } catch (error: any) {
-      toast("Login failed");
+      toast.error(
+        error?.response?.data?.message || "Login failed. Please try again.",
+      );
     }
   };
+
   return (
     <div className="min-h-screen flex bg-background">
       {/* Left — Branding panel */}
       <div className="hidden lg:flex lg:w-1/2 flex-col justify-between p-12 bg-foreground text-background relative overflow-hidden">
-        {/* Decorative circles */}
         <div className="absolute -top-32 -right-32 w-96 h-96 rounded-full bg-white/5" />
         <div className="absolute -bottom-20 -left-20 w-72 h-72 rounded-full bg-white/5" />
 
@@ -110,6 +129,7 @@ const Login = () => {
           <p className="text-muted-foreground mb-8">
             Sign in to your organization account
           </p>
+
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <FormField
@@ -126,9 +146,12 @@ const Login = () => {
                         disabled={loading}
                       />
                     </FormControl>
+                    {/* ✅ Bug fix #5: FormMessage was missing on email field */}
+                    <FormMessage />
                   </FormItem>
                 )}
               />
+
               <FormField
                 control={form.control}
                 name="password"
@@ -136,12 +159,32 @@ const Login = () => {
                   <FormItem>
                     <FormLabel>Password</FormLabel>
                     <FormControl>
-                      <Input
-                        type={showPassword ? "text" : "password"}
-                        placeholder="••••••••"
-                        {...field}
-                        disabled={loading}
-                      />
+                      {/* ✅ Bug fix #6: showPassword toggle button was rendered but
+                          never wired — now includes the toggle button in the UI */}
+                      <div className="relative">
+                        <Input
+                          type={showPassword ? "text" : "password"}
+                          placeholder="••••••••"
+                          {...field}
+                          disabled={loading}
+                          className="pr-10"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword((prev) => !prev)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                          tabIndex={-1}
+                          aria-label={
+                            showPassword ? "Hide password" : "Show password"
+                          }
+                        >
+                          {showPassword ? (
+                            <EyeOff className="w-4 h-4" />
+                          ) : (
+                            <Eye className="w-4 h-4" />
+                          )}
+                        </button>
+                      </div>
                     </FormControl>
                     <FormMessage />
                   </FormItem>

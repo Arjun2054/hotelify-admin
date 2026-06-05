@@ -1,5 +1,3 @@
-// components/hotel/analytics/RevenueLineChart.tsx
-"use client";
 import {
   XAxis,
   YAxis,
@@ -13,6 +11,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { TrendingUp } from "lucide-react";
 import type { MonthlyTrend } from "@/types/room-analytics";
+import { formatCurrency } from "@/lib/utils";
 
 interface Props {
   data: MonthlyTrend[];
@@ -40,7 +39,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
           </span>
           <span className="font-medium text-gray-900 dark:text-white">
             {entry.dataKey === "revenue"
-              ? `NPR ${entry.value.toLocaleString()}`
+              ? `${formatCurrency(entry.value)}`
               : entry.dataKey === "occupancyRate"
                 ? `${entry.value}%`
                 : entry.value}
@@ -74,7 +73,7 @@ export function RevenueLineChart({ data, isLoading }: Props) {
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart
             data={data}
-            margin={{ top: 5, right: 10, left: 0, bottom: 5 }}
+            margin={{ top: 5, right: 10, left: 10, bottom: 5 }}
           >
             <defs>
               <linearGradient id="revenueGrad" x1="0" y1="0" x2="0" y2="1">
@@ -93,21 +92,26 @@ export function RevenueLineChart({ data, isLoading }: Props) {
             />
             <XAxis
               dataKey="monthShort"
-              tick={{
-                fontSize: 11,
-                fill: "#9ca3af",
-              }}
+              tick={{ fontSize: 11, fill: "#9ca3af" }}
               axisLine={false}
               tickLine={false}
             />
+
+            {/* ✅ Updated: NPR with k suffix */}
             <YAxis
               yAxisId="revenue"
               orientation="left"
               tick={{ fontSize: 11, fill: "#9ca3af" }}
               axisLine={false}
               tickLine={false}
-              tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`}
+              tickFormatter={(v) =>
+                v >= 1000
+                  ? `${formatCurrency(v / 1000)}k`
+                  : `${formatCurrency(v)}` || `${v}`
+              }
+              width={72}
             />
+
             <YAxis
               yAxisId="occupancy"
               orientation="right"

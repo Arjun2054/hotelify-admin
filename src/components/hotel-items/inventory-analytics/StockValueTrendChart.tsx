@@ -91,7 +91,7 @@ export function StockValueTrendChart({
               tick={{ fontSize: 11, fill: "#9ca3af" }}
               axisLine={false}
               tickLine={false}
-              tickFormatter={(v) => `NPR ${(v / 1000).toFixed(0)}k`}
+              tickFormatter={(v) => `${formatCurrency(v / 1000)}k`}
             />
             <Tooltip content={<CustomTooltip />} />
             <Legend wrapperStyle={{ fontSize: "11px", paddingTop: "8px" }} />

@@ -1,10 +1,7 @@
-// components/hotel/analytics/TopRoomsTable.tsx
-"use client";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Badge } from "@/components/ui/badge";
-import { Trophy, TrendingUp } from "lucide-react";
+import { Trophy } from "lucide-react";
 import { useState } from "react";
-import { cn } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
 import type { RoomPerformanceMetric } from "@/types/room-analytics";
 
 interface Props {
@@ -161,7 +158,7 @@ export function TopRoomsTable({ data, isLoading }: Props) {
                   </span>
                 </td>
                 <td className="py-3 px-3 text-right font-semibold text-gray-900 dark:text-white">
-                  ${room.totalRevenue.toLocaleString()}
+                  {formatCurrency(room.totalRevenue)}
                 </td>
                 <td className="py-3 px-3 text-right text-gray-600 dark:text-gray-400">
                   {room.totalBookings}
